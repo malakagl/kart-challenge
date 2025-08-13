@@ -19,6 +19,7 @@ func TestValidatePromoCode(t *testing.T) {
 		expected  bool
 	}{
 		{"Empty code", "", false},
+		{"Valid code", "HAPPYHRS", true},
 	}
 
 	for _, tt := range tests {

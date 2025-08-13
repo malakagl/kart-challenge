@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	promoCodes = make(map[string][]string)
-	mu         sync.Mutex
+	promoCodesSet1 sync.Map
+	promoCodesSet2 sync.Map
+	promoCodesSet3 sync.Map
 )
 
 func init() {
@@ -20,29 +21,34 @@ func init() {
 	if promoCodesDir == "" {
 		promoCodesDir = "../../promocodes" // Default value if not set
 	}
-	files, err := os.ReadDir(promoCodesDir)
-	if err != nil {
-		log.Fatalf("Failed to read promocodes directory: %v", err)
-	}
-
 	var wg sync.WaitGroup
-	for _, file := range files {
-		if !file.IsDir() && filepath.Ext(file.Name()) == ".gz" {
-			filePath := filepath.Join(promoCodesDir, file.Name())
-			wg.Add(1)
-			go readFile(file.Name(), filePath, &wg)
-		}
-	}
+	filePath := filepath.Join(promoCodesDir, "couponbase1.gz")
+	wg.Add(1)
+	go readFile(filePath, &promoCodesSet1, &wg)
+
+	filePath = filepath.Join(promoCodesDir, "couponbase2.gz")
+	wg.Add(1)
+	go readFile(filePath, &promoCodesSet2, &wg)
+
+	filePath = filepath.Join(promoCodesDir, "couponbase3.gz")
+	wg.Add(1)
+	go readFile(filePath, &promoCodesSet3, &wg)
 	wg.Wait()
 }
 
-func readFile(fileName, filePath string, wg *sync.WaitGroup) {
+func readFile(filePath string, codes *sync.Map, wg *sync.WaitGroup) {
 	defer wg.Done()
 	promos := readPromosFromFile(filePath)
-	if promos != nil {
-		mu.Lock()
-		defer mu.Unlock()
-		promoCodes[fileName] = promos
+	for _, promo := range promos {
+		addCode(promo, codes)
+	}
+}
+
+func addCode(promo string, codes *sync.Map) {
+	code := strings.TrimSpace(promo)
+	length := len(code)
+	if 8 <= length && length <= 10 {
+		codes.Store(code, true)
 	}
 }
 
@@ -71,10 +77,16 @@ func readPromosFromFile(filePath string) []string {
 }
 
 func ValidatePromoCode(code string) bool {
-	if len(code) == 0 || len(code) < 5 {
-		return false
+	count := 0
+	if _, exists := promoCodesSet1.Load(code); exists {
+		count++
+	}
+	if _, exists := promoCodesSet2.Load(code); exists {
+		count++
+	}
+	if _, exists := promoCodesSet3.Load(code); exists {
+		count++
 	}
 
-	// TODO: Implement logic to check if the code exists in the loaded promo codes
-	return true
+	return count > 1
 }
