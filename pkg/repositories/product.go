@@ -1,8 +1,8 @@
 package repositories
 
 import (
-	"github.com/malakagl/kart-challenge/internal/models"
 	"github.com/malakagl/kart-challenge/pkg/constants"
+	"github.com/malakagl/kart-challenge/pkg/models"
 )
 
 type InMemoryProductRepo struct {

@@ -3,7 +3,7 @@ package services
 import (
 	"log"
 
-	"github.com/malakagl/kart-challenge/internal/models"
+	"github.com/malakagl/kart-challenge/pkg/models"
 )
 
 type OrderRepository interface {

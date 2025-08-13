@@ -5,21 +5,21 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/malakagl/kart-challenge/internal/models"
-	"github.com/malakagl/kart-challenge/internal/services"
+	models2 "github.com/malakagl/kart-challenge/pkg/models"
+	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
 
 type OrderHandler struct {
-	orderService   services.OrderRepository
-	productService services.ProductRepository
+	orderService   services2.OrderRepository
+	productService services2.ProductRepository
 }
 
-func NewOrderHandler(o services.OrderRepository, p services.ProductRepository) *OrderHandler {
+func NewOrderHandler(o services2.OrderRepository, p services2.ProductRepository) *OrderHandler {
 	return &OrderHandler{orderService: o, productService: p}
 }
 
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	var orderReq models.OrderRequest
+	var orderReq models2.OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
 		log.Println("Error decoding request body:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -27,11 +27,11 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Received order request:", orderReq)
-	order := models.Order{
+	order := models2.Order{
 		Items:      orderReq.Items,
 		CouponCode: orderReq.CouponCode,
 	}
-	products := make([]*models.Product, len(orderReq.Items))
+	products := make([]*models2.Product, len(orderReq.Items))
 	for i, item := range orderReq.Items {
 		if item.ProductID == "" {
 			log.Println("Invalid product ID in order request")
@@ -57,7 +57,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(models.OrderResponse{
+	err = json.NewEncoder(w).Encode(models2.OrderResponse{
 		ID:       orderID,
 		Items:    orderReq.Items,
 		Products: products,

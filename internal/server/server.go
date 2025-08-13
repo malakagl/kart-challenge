@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/internal/handlers"
-	"github.com/malakagl/kart-challenge/internal/models"
-	"github.com/malakagl/kart-challenge/internal/repositories"
-	"github.com/malakagl/kart-challenge/internal/services"
+	"github.com/malakagl/kart-challenge/pkg/models"
+	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
+	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
 
 func Start() error {
@@ -21,17 +21,17 @@ func Start() error {
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	productRepo := repositories.NewInMemoryProductRepo([]models.Product{
+	productRepo := repositories2.NewInMemoryProductRepo([]models.Product{
 		{ID: "1", Name: "Burger", Price: 9.99, Category: "Fast Food"},
 		{ID: "2", Name: "Pizza", Price: 14.50, Category: "Italian"},
 	})
-	productService := services.NewProductService(productRepo)
+	productService := services2.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productService)
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/products/{productID}", productHandler.GetProductByID)
 
-	orderRepo := repositories.NewInMemoryOrderRepo()
-	orderService := services.NewOrderService(orderRepo)
+	orderRepo := repositories2.NewInMemoryOrderRepo()
+	orderService := services2.NewOrderService(orderRepo)
 	orderHandler := handlers.NewOrderHandler(orderService, productService)
 	r.Post("/orders", orderHandler.CreateOrder)
 

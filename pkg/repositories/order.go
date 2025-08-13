@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"github.com/google/uuid"
-	"github.com/malakagl/kart-challenge/internal/models"
+	"github.com/malakagl/kart-challenge/pkg/models"
 )
 
 type InMemoryOrderRepo struct {

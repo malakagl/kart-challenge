@@ -1,6 +1,8 @@
 package services
 
-import "github.com/malakagl/kart-challenge/internal/models"
+import (
+	"github.com/malakagl/kart-challenge/pkg/models"
+)
 
 type ProductRepository interface {
 	FindAll() ([]models.Product, error)

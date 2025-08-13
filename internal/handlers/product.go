@@ -6,8 +6,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/malakagl/kart-challenge/pkg/services"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/malakagl/kart-challenge/internal/services"
 	"github.com/malakagl/kart-challenge/pkg/constants"
 )
 
@@ -27,7 +28,7 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(products)
+	_ = json.NewEncoder(w).Encode(products)
 }
 
 func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -56,5 +57,5 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(product)
+	_ = json.NewEncoder(w).Encode(product)
 }

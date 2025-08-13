@@ -7,8 +7,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/malakagl/kart-challenge/pkg/models"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/malakagl/kart-challenge/internal/models"
 	"github.com/malakagl/kart-challenge/pkg/constants"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
