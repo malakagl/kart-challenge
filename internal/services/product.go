@@ -1,9 +1,10 @@
 package services
 
-import "github.com/MalakaGL/kart-challenge-lahiru/kart-challenge/internal/models"
+import "github.com/malakagl/kart-challenge/internal/models"
 
 type ProductRepository interface {
 	FindAll() ([]models.Product, error)
+	FindByID(id string) (*models.Product, error)
 }
 
 type ProductService struct {
@@ -14,6 +15,15 @@ func NewProductService(r ProductRepository) *ProductService {
 	return &ProductService{repo: r}
 }
 
-func (s *ProductService) GetAllProducts() ([]models.Product, error) {
+func (s *ProductService) FindAll() ([]models.Product, error) {
 	return s.repo.FindAll()
+}
+
+func (s *ProductService) FindByID(id string) (*models.Product, error) {
+	product, err := s.repo.FindByID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	return product, nil
 }

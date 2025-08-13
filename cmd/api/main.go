@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/MalakaGL/kart-challenge-lahiru/kart-challenge/internal/server"
+	"github.com/malakagl/kart-challenge/internal/server"
 )
 
 func main() {
