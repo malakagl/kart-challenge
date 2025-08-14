@@ -6,10 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/malakagl/kart-challenge/pkg/services"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/pkg/constants"
+	"github.com/malakagl/kart-challenge/pkg/services"
 )
 
 type ProductHandler struct {

@@ -19,7 +19,7 @@ tags:
   - name: product
     description: Everything about products
   - name: order
-    description: Place Orderso
+    description: Place Orders
 paths:
   /product:
     get:

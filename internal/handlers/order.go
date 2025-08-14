@@ -5,33 +5,37 @@ import (
 	"log"
 	"net/http"
 
-	models2 "github.com/malakagl/kart-challenge/pkg/models"
-	services2 "github.com/malakagl/kart-challenge/pkg/services"
+	"github.com/malakagl/kart-challenge/pkg/models"
+	"github.com/malakagl/kart-challenge/pkg/services"
 )
 
 type OrderHandler struct {
-	orderService   services2.OrderRepository
-	productService services2.ProductRepository
+	orderService   services.OrderRepository
+	productService services.ProductRepository
 }
 
-func NewOrderHandler(o services2.OrderRepository, p services2.ProductRepository) *OrderHandler {
+func NewOrderHandler(o services.OrderRepository, p services.ProductRepository) *OrderHandler {
 	return &OrderHandler{orderService: o, productService: p}
 }
 
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
-	var orderReq models2.OrderRequest
+	var orderReq models.OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
 		log.Println("Error decoding request body:", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	log.Println("Received order request:", orderReq)
-	order := models2.Order{
-		Items:      orderReq.Items,
-		CouponCode: orderReq.CouponCode,
+	if orderReq.CouponCode != "" && !IsPromoCodeValid(orderReq.CouponCode) {
+		log.Println("Invalid promo code:", orderReq.CouponCode)
+		http.Error(w, "Invalid promo code", http.StatusUnprocessableEntity)
+		return
 	}
-	products := make([]*models2.Product, len(orderReq.Items))
+
+	order := models.Order{
+		Items: orderReq.Items,
+	}
+	products := make([]*models.Product, len(orderReq.Items))
 	for i, item := range orderReq.Items {
 		if item.ProductID == "" {
 			log.Println("Invalid product ID in order request")
@@ -47,6 +51,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		}
 
 		products[i] = product
+		order.Total += product.Price * float64(item.Quantity)
 	}
 
 	orderID, err := h.orderService.Create(order)
@@ -57,7 +62,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(models2.OrderResponse{
+	err = json.NewEncoder(w).Encode(models.Order{
 		ID:       orderID,
 		Items:    orderReq.Items,
 		Products: products,

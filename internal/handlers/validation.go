@@ -1,92 +1,80 @@
 package handlers
 
 import (
+	"bufio"
 	"compress/gzip"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
-	"sync"
 )
 
-var (
-	promoCodesSet1 sync.Map
-	promoCodesSet2 sync.Map
-	promoCodesSet3 sync.Map
-)
-
-func init() {
-	promoCodesDir := os.Getenv("PROMO_CODES_DIR")
-	if promoCodesDir == "" {
-		promoCodesDir = "../../promocodes" // Default value if not set
-	}
-	var wg sync.WaitGroup
-	filePath := filepath.Join(promoCodesDir, "couponbase1.gz")
-	wg.Add(1)
-	go readFile(filePath, &promoCodesSet1, &wg)
-
-	filePath = filepath.Join(promoCodesDir, "couponbase2.gz")
-	wg.Add(1)
-	go readFile(filePath, &promoCodesSet2, &wg)
-
-	filePath = filepath.Join(promoCodesDir, "couponbase3.gz")
-	wg.Add(1)
-	go readFile(filePath, &promoCodesSet3, &wg)
-	wg.Wait()
+var couponFiles = []string{
+	"couponbase1.gz",
+	"couponbase2.gz",
+	"couponbase3.gz",
 }
 
-func readFile(filePath string, codes *sync.Map, wg *sync.WaitGroup) {
-	defer wg.Done()
-	promos := readPromosFromFile(filePath)
-	for _, promo := range promos {
-		addCode(promo, codes)
-	}
+func dataFilePath(name string) string {
+	_, thisFile, _, _ := runtime.Caller(0) // 0 = this function
+	baseDir := filepath.Join(filepath.Dir(thisFile), "../../promocodes/")
+	return filepath.Join(baseDir, name)
 }
 
-func addCode(promo string, codes *sync.Map) {
-	code := strings.TrimSpace(promo)
-	length := len(code)
-	if 8 <= length && length <= 10 {
-		codes.Store(code, true)
+func IsPromoCodeValid(code string) bool {
+	log.Println("Validating promo code:", code)
+	if len(code) < 8 || len(code) > 10 {
+		return false
 	}
+
+	foundCount := 0
+	for _, path := range couponFiles {
+		path = dataFilePath(path)
+		ok, err := containsCodeInGzip(path, code)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+
+		if ok {
+			foundCount++
+			if foundCount >= 2 {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
-func readPromosFromFile(filePath string) []string {
-	file, err := os.Open(filePath)
+func containsCodeInGzip(path, code string) (bool, error) {
+	log.Println("checking in file", path)
+	f, err := os.Open(path)
 	if err != nil {
-		log.Printf("Failed to open file %s: %v", file.Name(), err)
-		return nil
+		return false, err
 	}
+	defer func() { _ = f.Close() }()
 
-	defer func() { _ = file.Close() }()
-	gzReader, err := gzip.NewReader(file)
+	gr, err := gzip.NewReader(f)
 	if err != nil {
-		log.Printf("Failed to create gzip reader for file %s: %v", file.Name(), err)
-		return nil
+		return false, err
+	}
+	defer func() { _ = gr.Close() }()
+
+	scanner := bufio.NewScanner(gr)
+	buf := make([]byte, 0, 64*1024)
+	scanner.Buffer(buf, 1024*1024)
+	for scanner.Scan() {
+		c := strings.TrimSpace(scanner.Text())
+		if c == code {
+			return true, nil
+		}
 	}
 
-	defer func() { _ = gzReader.Close() }()
-	data, err := io.ReadAll(gzReader)
-	if err != nil {
-		log.Printf("Failed to read gzip file %s: %v", file.Name(), err)
-		return nil
+	if scanner.Err() != nil {
+		return false, err
 	}
 
-	return strings.Split(string(data), "\n")
-}
-
-func ValidatePromoCode(code string) bool {
-	count := 0
-	if _, exists := promoCodesSet1.Load(code); exists {
-		count++
-	}
-	if _, exists := promoCodesSet2.Load(code); exists {
-		count++
-	}
-	if _, exists := promoCodesSet3.Load(code); exists {
-		count++
-	}
-
-	return count > 1
+	return false, nil
 }
