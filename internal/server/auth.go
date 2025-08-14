@@ -15,5 +15,5 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 }
 
 func isValidApiKey(key string) bool {
-	return key == "oolio"
+	return key == "apitest"
 }

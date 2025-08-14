@@ -1,16 +1,8 @@
 package handlers
 
 import (
-	"os"
 	"testing"
 )
-
-func init() {
-	err := os.Setenv("PROMO_CODES_DIR", "../../promocodes")
-	if err != nil {
-		panic("Failed to set environment variable: " + err.Error())
-	}
-}
 
 func TestValidatePromoCode(t *testing.T) {
 	tests := []struct {
@@ -19,12 +11,14 @@ func TestValidatePromoCode(t *testing.T) {
 		expected  bool
 	}{
 		{"Empty code", "", false},
-		{"Valid code", "HAPPYHRS", true},
+		{"Valid code 1", "HAPPYHRS", true},
+		{"Valid code 2", "FIFTYOFF", true},
+		{"Invalid code", "SUPER100", false},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := ValidatePromoCode(tt.promoCode)
+			result := IsPromoCodeValid(tt.promoCode)
 			if result != tt.expected {
 				t.Errorf("expected %v, got %v", tt.expected, result)
 			}
