@@ -132,3 +132,6 @@ dist
 /promocodes/
 /vendor/
 .idea
+/internal/handlers/codes.db
+/internal/handlers/codes.db-shm
+/internal/handlers/codes.db-wal
