@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 var couponFiles = []string{
@@ -28,53 +29,58 @@ func IsPromoCodeValid(code string) bool {
 		return false
 	}
 
-	foundCount := 0
+	resultChan := make(chan bool, len(couponFiles))
+	wg := sync.WaitGroup{}
 	for _, path := range couponFiles {
 		path = dataFilePath(path)
-		ok, err := containsCodeInGzip(path, code)
-		if err != nil {
-			log.Println(err)
-			return false
-		}
-
-		if ok {
-			foundCount++
-			if foundCount >= 2 {
-				return true
-			}
+		wg.Add(1)
+		go containsCodeInGzip(path, code, &wg, resultChan)
+	}
+	wg.Wait()
+	close(resultChan)
+	count := 0
+	for res := range resultChan {
+		if res {
+			count++
 		}
 	}
 
-	return false
+	return count > 1
 }
 
-func containsCodeInGzip(path, code string) (bool, error) {
+func containsCodeInGzip(path, code string, wg *sync.WaitGroup, result chan bool) {
+	defer wg.Done()
 	log.Println("checking in file", path)
 	f, err := os.Open(path)
 	if err != nil {
-		return false, err
+		log.Println(err)
+		result <- false
+		return
 	}
 	defer func() { _ = f.Close() }()
 
 	gr, err := gzip.NewReader(f)
 	if err != nil {
-		return false, err
+		log.Println(err)
+		result <- false
+		return
 	}
 	defer func() { _ = gr.Close() }()
 
 	scanner := bufio.NewScanner(gr)
-	buf := make([]byte, 0, 64*1024)
-	scanner.Buffer(buf, 1024*1024)
+	scanner.Buffer(nil, 1024*1024)
 	for scanner.Scan() {
 		c := strings.TrimSpace(scanner.Text())
 		if c == code {
-			return true, nil
+			log.Println(err)
+			result <- true
+			return
 		}
 	}
 
-	if scanner.Err() != nil {
-		return false, err
+	if err := scanner.Err(); err != nil {
+		log.Println(err)
 	}
 
-	return false, nil
+	result <- false
 }
