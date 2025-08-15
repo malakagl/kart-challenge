@@ -17,6 +17,32 @@ make run
 make test
 ```
 
+### Useful commands
+
+```
+# install dev dependencies
+go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# to create new migration file
+migrate create -ext sql -dir db/migrations -seq init_db
+
+# to start the database
+docker compose up -d postgres
+
+# to stop the database
+docker compose down postgres 
+
+# apply migations
+migrate -path db/migrations -database "postgres://user:password@localhost:5432/test?sslmode=disable" up
+
+# remove migrations
+migrate -path db/migrations -database "postgres://user:password@localhost:5432/test?sslmode=disable" down
+```
+
+### Notes
+- Took around 25 minutes to load all coupon codes to the database.
+- To read gz files via code and scan it took around 15 seconds.
+
 ### Tasks
 - [x] Implement the API server
 - [x] Implement the OpenAPI spec

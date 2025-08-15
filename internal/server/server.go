@@ -5,13 +5,21 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/malakagl/kart-challenge/internal/handlers"
+	handlers2 "github.com/malakagl/kart-challenge/internal/api/handlers"
+	"github.com/malakagl/kart-challenge/internal/db"
+	"github.com/malakagl/kart-challenge/internal/promo"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
 	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
 
 func Start() error {
+	if err := db.RunMigrations(); err != nil {
+		log.Fatalf("db migrations failed: %v", err)
+	}
+
+	promo.LoadCouponCodes()
+
 	r := chi.NewRouter()
 
 	r.Use(AuthenticationMiddleware, LoggingMiddleware, ResponseHeadersMiddleware)
@@ -26,13 +34,13 @@ func Start() error {
 		{ID: "2", Name: "Pizza", Price: 14.50, Category: "Italian"},
 	})
 	productService := services2.NewProductService(productRepo)
-	productHandler := handlers.NewProductHandler(productService)
+	productHandler := handlers2.NewProductHandler(productService)
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/products/{productID}", productHandler.GetProductByID)
 
 	orderRepo := repositories2.NewInMemoryOrderRepo()
 	orderService := services2.NewOrderService(orderRepo)
-	orderHandler := handlers.NewOrderHandler(orderService, productService)
+	orderHandler := handlers2.NewOrderHandler(orderService, productService)
 	r.Post("/orders", orderHandler.CreateOrder)
 
 	log.Println("Server starting on port 8080")
