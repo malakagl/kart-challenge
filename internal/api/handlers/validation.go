@@ -14,12 +14,12 @@ func IsPromoCodeValid(code string) bool {
 		return false
 	}
 
-	rows, err := conn.Query(context.Background(), "SELECT DISTINCT file_id FROM coupon_codes WHERE code = $1;", code)
+	var count int
+	err = conn.QueryRow(context.Background(), "select count(distinct file_id) from coupon_codes where code=$1;", code).Scan(&count)
 	if err != nil {
 		log.Println("Error querying promo code:", err)
 		return false
 	}
-	defer rows.Close()
 
-	return len(rows.RawValues()) > 1
+	return count > 1
 }

@@ -1,1 +1,16 @@
-# TODO: add config here for local
+server:
+  port: 8080
+  host: "127.0.0.1"
+
+database:
+  type: "postgres"
+  user: "user"
+  password: "password"
+  host: "localhost"
+  port: 5432
+  name: "test"
+  sslEnabled: false
+  debug: true
+
+logging:
+  debug: true
