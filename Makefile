@@ -9,12 +9,13 @@ fmt:
 	gofmt -s -w .
 
 run:
-	go run -race ./cmd/app/main.go
+	go run -race ./cmd/app/main.go --config ./config/config.local.yaml
 
 test:
 	go test ./... -v
 
 start-dep:
+	mkdir -p ./postgres_data
 	docker compose up -d postgres
 
 stop-dep:

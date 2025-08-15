@@ -1,24 +1,25 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	handlers2 "github.com/malakagl/kart-challenge/internal/api/handlers"
+	"github.com/malakagl/kart-challenge/internal/config"
 	"github.com/malakagl/kart-challenge/internal/db"
-	"github.com/malakagl/kart-challenge/internal/promo"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
 	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
 
-func Start() error {
+func Start(cfg *config.Config) error {
 	if err := db.RunMigrations(); err != nil {
 		log.Fatalf("db migrations failed: %v", err)
 	}
 
-	promo.LoadCouponCodes()
+	//promo.LoadCouponCodes()
 
 	r := chi.NewRouter()
 
@@ -43,6 +44,7 @@ func Start() error {
 	orderHandler := handlers2.NewOrderHandler(orderService, productService)
 	r.Post("/orders", orderHandler.CreateOrder)
 
-	log.Println("Server starting on port 8080")
-	return http.ListenAndServe(":8080", r)
+	serverURL := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	log.Println("Server starting on ", serverURL)
+	return http.ListenAndServe(serverURL, r)
 }

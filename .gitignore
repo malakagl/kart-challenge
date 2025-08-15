@@ -132,3 +132,4 @@ dist
 /promocodes/
 /vendor/
 .idea
+/postgres_data/
