@@ -9,7 +9,13 @@ fmt:
 	gofmt -s -w .
 
 run:
-	go run -race ./cmd/server/main.go
+	go run -race ./cmd/app/main.go
 
 test:
 	go test ./... -v
+
+start-dep:
+	docker compose up -d postgres
+
+stop-dep:
+	docker compose down postgres
