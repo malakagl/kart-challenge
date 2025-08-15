@@ -3,7 +3,7 @@ package models
 type Order struct {
 	ID        string      `json:"id"`
 	Total     float64     `json:"total"`
-	Discounts []string    `json:"discounts,omitempty"`
+	Discounts float64     `json:"discounts,omitempty"`
 	Items     []OrderItem `json:"items"`
 	Products  []*Product  `json:"products"`
 }
