@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16
     container_name: postgres
+    hostname: postgres
     restart: always
     environment:
       POSTGRES_USER: user
@@ -11,6 +12,25 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - kart-challenge-network
+
+  kart-challenge:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    container_name: kart-challenge
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    entrypoint: ["./kart-challenge", "--config", "config.docker.yaml"]
+    networks:
+      - kart-challenge-network
+
+networks:
+    kart-challenge-network:
+        driver: bridge
 
 volumes:
   postgres_data:

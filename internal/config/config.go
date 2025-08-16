@@ -9,10 +9,10 @@ import (
 )
 
 type Config struct {
-	Server           ServerConfig     `yaml:"server"`
-	Database         DatabaseConfig   `yaml:"database"`
-	Logging          LoggingConfig    `yaml:"logging"`
-	CouponCodeConfig CouponCodeConfig `yaml:"couponCodeConfig"`
+	Server     ServerConfig     `yaml:"server"`
+	Database   DatabaseConfig   `yaml:"database"`
+	Logging    LoggingConfig    `yaml:"logging"`
+	CouponCode CouponCodeConfig `yaml:"couponCode"`
 }
 
 type ServerConfig struct {
@@ -21,14 +21,14 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host       string `yaml:"host" validate:"required"`
-	Port       int    `yaml:"port" validate:"required"`
-	Name       string `yaml:"name" validate:"required"`
-	User       string `yaml:"user" validate:"required"`
-	Password   string `yaml:"password" validate:"required"`
-	SSLEnabled bool   `yaml:"sslEnabled"`
-	Debug      bool   `yaml:"debug"`
-	Type       string `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
+	Host     string `yaml:"host" validate:"required"`
+	Port     int    `yaml:"port" validate:"required"`
+	Name     string `yaml:"name" validate:"required"`
+	User     string `yaml:"user" validate:"required"`
+	Password string `yaml:"password" validate:"required"`
+	SSLMode  string `yaml:"sslMode"`
+	Debug    bool   `yaml:"debug"`
+	Type     string `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
 }
 
 type CouponCodeConfig struct {

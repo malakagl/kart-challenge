@@ -19,17 +19,10 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		return dbInstance, nil
 	}
 
-	user := cfg.User
-	pass := cfg.Password
-	host := cfg.Host
-	port := cfg.Port
-	name := cfg.Name
-
 	dsn := fmt.Sprintf(
-		"host=%s user=%s password=%s dbname=%s port=%d sslmode=disable",
-		host, user, pass, name, port,
+		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s",
+		cfg.Host, cfg.User, cfg.Password, cfg.Name, cfg.Port, cfg.SSLMode,
 	)
-
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)

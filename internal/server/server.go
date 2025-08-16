@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -17,19 +16,22 @@ import (
 )
 
 func Start(cfg *config.Config) error {
-	if err := database.RunMigrations(); err != nil {
-		log.Fatalf("database migrations failed: %v", err)
+	if err := database.RunMigrations(cfg.Database); err != nil {
+		logging.Logger.Error().Msgf("database migrations failed: %v", err)
+		return err
 	}
 
-	if !cfg.CouponCodeConfig.Unzipped {
-		if err := couponcode.SetupCouponCodeFiles(cfg.CouponCodeConfig.FilePaths); err != nil {
+	if !cfg.CouponCode.Unzipped {
+		if err := couponcode.SetupCouponCodeFiles(cfg.CouponCode.FilePaths); err != nil {
 			logging.Logger.Error().Msgf("failed to load coupon codes: %v", err)
+			return err
 		}
 	}
 
 	db, err := database.Connect(&cfg.Database)
 	if err != nil {
 		logging.Logger.Error().Msgf("failed to connect to database: %v", err)
+		return err
 	}
 
 	r := chi.NewRouter()
@@ -47,7 +49,7 @@ func Start(cfg *config.Config) error {
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/products/{productID}", productHandler.GetProductByID)
 
-	v := couponcode.NewValidator(cfg.CouponCodeConfig.FilePaths)
+	v := couponcode.NewValidator(cfg.CouponCode.FilePaths)
 	orderRepo := repositories2.NewOrderRepo(db)
 	orderService := services2.NewOrderService(orderRepo)
 	orderHandler := handlers2.NewOrderHandler(orderService, productService, v)

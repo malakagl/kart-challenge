@@ -50,16 +50,15 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [x] Implement promo code functionality
 - [x] Implement the database
 - [x] Implement the database migrations
-- [ ] Implement logging
+- [x] Implement logging
 - [ ] Implement the error handling
 - [x] Implement the configuration management
 - [ ] Implement the integration tests
-- [ ] Implement the Dockerfile
+- [x] Implement the Dockerfile
 - [x] Implement the Makefile
 - [x] Implement the README.md
 - [ ] Implement the CI/CD pipeline
 - [ ] Implement the GitHub Actions workflow
-- [ ] Implement the GitHub Issues
 - [ ] Implement the GitHub Pull Requests
 - [ ] Implement money package for handling money
 - [ ] Implement the caching
@@ -67,4 +66,3 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [ ] Implement the security
 - [ ] Implement the monitoring
 - [ ] Implement the tracing
-- [ ] Implement the API documentation

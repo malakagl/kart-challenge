@@ -16,13 +16,13 @@ database:
   name: "testdb"
   user: "testuser"
   password: "testpass"
-  sslEnabled: true
+  sslMode: "disable"
   debug: false
   type: "postgres"
 logging:
   level: debug
   jsonFormat: true
-couponCodeConfig:
+couponCode:
   unzipped: false
   filePaths:
     - "file1.gz"
@@ -55,20 +55,20 @@ couponCodeConfig:
 	if !cfg.Logging.JsonFormat {
 		t.Errorf("expected logging jsonFormat true, got false")
 	}
-	if cfg.CouponCodeConfig.Unzipped != false {
+	if cfg.CouponCode.Unzipped != false {
 		t.Errorf("expected unzipped false, got true")
 	}
-	if len(cfg.CouponCodeConfig.FilePaths) != 3 {
-		t.Errorf("expected 3 coupon code files, got %d", len(cfg.CouponCodeConfig.FilePaths))
+	if len(cfg.CouponCode.FilePaths) != 3 {
+		t.Errorf("expected 3 coupon code files, got %d", len(cfg.CouponCode.FilePaths))
 	}
-	if cfg.CouponCodeConfig.FilePaths[0] != "file1.gz" {
-		t.Errorf("expected first coupon code file to be 'file1.gz', got %s", cfg.CouponCodeConfig.FilePaths[0])
+	if cfg.CouponCode.FilePaths[0] != "file1.gz" {
+		t.Errorf("expected first coupon code file to be 'file1.gz', got %s", cfg.CouponCode.FilePaths[0])
 	}
-	if cfg.CouponCodeConfig.FilePaths[1] != "file2.gz" {
-		t.Errorf("expected second coupon code file to be 'file2.gz', got %s", cfg.CouponCodeConfig.FilePaths[1])
+	if cfg.CouponCode.FilePaths[1] != "file2.gz" {
+		t.Errorf("expected second coupon code file to be 'file2.gz', got %s", cfg.CouponCode.FilePaths[1])
 	}
-	if cfg.CouponCodeConfig.FilePaths[2] != "file3.gz" {
-		t.Errorf("expected third coupon code file to be 'file3.gz', got %s", cfg.CouponCodeConfig.FilePaths[2])
+	if cfg.CouponCode.FilePaths[2] != "file3.gz" {
+		t.Errorf("expected third coupon code file to be 'file3.gz', got %s", cfg.CouponCode.FilePaths[2])
 	}
 }
 

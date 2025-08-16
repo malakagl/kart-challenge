@@ -1,0 +1,7 @@
+.gitignore
+.idea
+ReadMe.md
+./api-spec
+./postgres_data
+./promocodes
+./vendor
