@@ -10,6 +10,8 @@ import (
 	"github.com/malakagl/kart-challenge/internal/config"
 	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/internal/database"
+	"github.com/malakagl/kart-challenge/internal/middleware"
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
 	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
@@ -21,18 +23,18 @@ func Start(cfg *config.Config) error {
 
 	if !cfg.CouponCodeConfig.Unzipped {
 		if err := couponcode.SetupCouponCodeFiles(cfg.CouponCodeConfig.FilePaths); err != nil {
-			log.Fatalf("failed to load coupon codes: %v", err)
+			logging.Logger.Error().Msgf("failed to load coupon codes: %v", err)
 		}
 	}
 
 	db, err := database.Connect(&cfg.Database)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		logging.Logger.Error().Msgf("failed to connect to database: %v", err)
 	}
 
 	r := chi.NewRouter()
 
-	r.Use(AuthenticationMiddleware, LoggingMiddleware, ResponseHeadersMiddleware)
+	r.Use(middleware.AuthenticationMiddleware, middleware.LoggingMiddleware, middleware.ResponseHeadersMiddleware)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -52,6 +54,6 @@ func Start(cfg *config.Config) error {
 	r.Post("/orders", orderHandler.CreateOrder)
 
 	serverURL := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	log.Println("Server starting on ", serverURL)
+	logging.Logger.Info().Msgf("Server starting on %s", serverURL)
 	return http.ListenAndServe(serverURL, r)
 }

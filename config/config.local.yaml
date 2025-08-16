@@ -13,7 +13,8 @@ database:
   debug: true
 
 logging:
-  debug: true
+  level: debug
+  jsonFormat: false
 
 couponCodeConfig:
   unzipped: true

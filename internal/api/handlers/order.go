@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 
 	"github.com/malakagl/kart-challenge/internal/couponcode"
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	"github.com/malakagl/kart-challenge/pkg/services"
 	"github.com/malakagl/kart-challenge/pkg/util"
@@ -24,13 +24,13 @@ func NewOrderHandler(o services.OrderRepository, p services.ProductRepository, v
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var orderReq models.OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-		log.Println("Error decoding request body:", err)
+		logging.Logger.Error().Msgf("Error decoding request body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	if orderReq.CouponCode == "" || !h.couponValidator.ValidateCouponCode(orderReq.CouponCode) {
-		log.Println("Invalid coupon code:", orderReq.CouponCode)
+		logging.Logger.Error().Msgf("Invalid coupon code: %s", orderReq.CouponCode)
 		http.Error(w, "Invalid coupon code", http.StatusUnprocessableEntity)
 		return
 	}
@@ -41,14 +41,14 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	for i, item := range orderReq.Items {
 		productId, err := util.StringToUint(item.ProductID)
 		if err != nil || productId == 0 {
-			log.Println("Invalid product ID in order request")
+			logging.Logger.Error().Msg("Invalid product ID in order request")
 			http.Error(w, "Invalid product ID", http.StatusBadRequest)
 			return
 		}
 
 		product, err := h.productService.FindByID(productId)
 		if err != nil || product == nil {
-			log.Println("Error fetching product:", err)
+			logging.Logger.Error().Msgf("Error fetching product: %v", err)
 			http.Error(w, "Failed to fetch product", http.StatusBadRequest)
 			return
 		}
@@ -61,7 +61,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	orderID, err := h.orderService.Create(order)
 	if err != nil {
-		log.Println("Error creating orderReq:", err)
+		logging.Logger.Error().Msgf("Error creating orderReq: %v", err)
 		http.Error(w, "Failed to create orderReq", http.StatusInternalServerError)
 		return
 	}
@@ -73,7 +73,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		Products: products,
 	})
 	if err != nil {
-		log.Println("Error encoding response:", err)
+		logging.Logger.Error().Msgf("Error encoding response: %v", err)
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}

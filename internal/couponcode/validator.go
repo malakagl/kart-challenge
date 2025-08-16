@@ -5,13 +5,14 @@ import (
 	"compress/gzip"
 	"context"
 	"io"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 )
 
 type CouponValidator interface {
@@ -65,9 +66,9 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 }
 
 func (v *Validator) ValidateCouponCode(code string) bool {
-	log.Println("validating coupon code ", code)
+	logging.Logger.Debug().Msgf("validating coupon code %s", code)
 	defer func(start time.Time) {
-		log.Println("validated coupon code in ", time.Since(start))
+		logging.Logger.Debug().Msgf("validated coupon code in %s", time.Since(start).String())
 	}(time.Now())
 
 	if code == "TEST" {

@@ -2,10 +2,10 @@ package database
 
 import (
 	"fmt"
-	"log"
 	"sync"
 
 	"github.com/malakagl/kart-challenge/internal/config"
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -15,7 +15,7 @@ var mu sync.Mutex
 
 func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	if dbInstance != nil {
-		log.Println("⚠️ Reusing existing GORM database connection")
+		logging.Logger.Debug().Msg("Reusing existing GORM database connection")
 		return dbInstance, nil
 	}
 
@@ -45,7 +45,7 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Println("✅ Connected to PostgreSQL via GORM")
+	logging.Logger.Debug().Msg("Connected to PostgreSQL via GORM")
 
 	// Ensure singleton
 	mu.Lock()
@@ -53,7 +53,7 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	if dbInstance == nil {
 		dbInstance = db
 	} else {
-		log.Println("⚠️ Reusing existing GORM database connection")
+		logging.Logger.Error().Msg("Reusing existing GORM database connection")
 	}
 
 	return dbInstance, nil

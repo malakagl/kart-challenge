@@ -6,6 +6,7 @@ import (
 
 	"github.com/malakagl/kart-challenge/internal/config"
 	"github.com/malakagl/kart-challenge/internal/server"
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 )
 
 func main() {
@@ -13,10 +14,14 @@ func main() {
 	flag.StringVar(&cfgPath, "config", "config.yaml", "path to YAML config file")
 	flag.Parse()
 
-	cfg := config.LoadConfig(cfgPath)
+	cfg, err := config.LoadConfig(cfgPath)
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
 
-	log.Println("Server setting up on port:", cfg.Server.Port)
+	logging.Init("kart-challenge", cfg.Logging)
+	logging.Logger.Info().Msgf("Server setting up on port: %d", cfg.Server.Port)
 	if err := server.Start(cfg); err != nil {
-		log.Fatalf("server start up failed: %v", err)
+		logging.Logger.Fatal().Msgf("server start up failed: %v", err)
 	}
 }

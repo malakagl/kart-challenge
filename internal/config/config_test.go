@@ -20,7 +20,8 @@ database:
   debug: false
   type: "postgres"
 logging:
-  debug: true
+  level: debug
+  jsonFormat: true
 couponCodeConfig:
   unzipped: false
   filePaths:
@@ -38,15 +39,21 @@ couponCodeConfig:
 	}
 	tmpFile.Close()
 
-	cfg := LoadConfig(tmpFile.Name())
+	cfg, err := LoadConfig(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("LoadConfig(%q) failed: %v", tmpFile.Name(), err)
+	}
 	if cfg.Server.Port != 8080 {
 		t.Errorf("expected server port 8080, got %d", cfg.Server.Port)
 	}
 	if cfg.Database.Type != "postgres" {
 		t.Errorf("expected database type postgres, got %s", cfg.Database.Type)
 	}
-	if !cfg.Logging.Debug {
+	if cfg.Logging.Level != "debug" {
 		t.Errorf("expected logging debug true")
+	}
+	if !cfg.Logging.JsonFormat {
+		t.Errorf("expected logging jsonFormat true, got false")
 	}
 	if cfg.CouponCodeConfig.Unzipped != false {
 		t.Errorf("expected unzipped false, got true")
@@ -67,10 +74,8 @@ couponCodeConfig:
 
 func TestLoadConfig_InvalidFile(t *testing.T) {
 	invalidPath := "nonexistent.yaml"
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("expected panic for missing file")
-		}
-	}()
-	LoadConfig(invalidPath)
+	cfg, err := LoadConfig(invalidPath)
+	if err == nil {
+		t.Errorf("LoadConfig(%q) expected to fail, but succeeded with config: %+v", invalidPath, cfg)
+	}
 }

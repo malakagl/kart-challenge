@@ -3,15 +3,18 @@ package couponcode
 import (
 	"compress/gzip"
 	"io"
-	"log"
 	"os"
 	"sync"
 	"time"
+
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 )
 
+// SetupCouponCodeFiles processes a list of gzip files, unzipping each one into a corresponding text file.
+// experimental: This function is designed to handle multiple files concurrently, improving performance for large datasets.
 func SetupCouponCodeFiles(filePaths []string) error {
 	defer func(start time.Time) {
-		log.Println("Coupon code files setup completed in ", time.Since(start))
+		logging.Logger.Info().Msgf("Coupon code files setup completed in %s", time.Since(start).String())
 	}(time.Now())
 
 	var wg sync.WaitGroup
@@ -21,7 +24,7 @@ func SetupCouponCodeFiles(filePaths []string) error {
 		go func(path string) {
 			defer wg.Done()
 			if err := UnZipGzipFile(path); err != nil {
-				log.Printf("error unzipping file %s: %v", path, err)
+				logging.Logger.Error().Msgf("error unzipping file %s: %v", path, err)
 			}
 		}(filePath)
 	}
@@ -29,7 +32,7 @@ func SetupCouponCodeFiles(filePaths []string) error {
 	close(errCh)
 	for err := range errCh {
 		if err != nil {
-			log.Printf("error processing file: %v", err)
+			logging.Logger.Error().Msgf("error processing file: %v", err)
 			return err
 		}
 	}
@@ -42,7 +45,7 @@ func UnZipGzipFile(input string) error {
 	// Open gzip file
 	f, err := os.Open(input)
 	if err != nil {
-		log.Printf("failed to open gzip file %s: %v", input, err)
+		logging.Logger.Error().Msgf("failed to open gzip file %s: %v", input, err)
 		return err
 	}
 	defer f.Close()
@@ -50,7 +53,7 @@ func UnZipGzipFile(input string) error {
 	// Create gzip reader
 	gr, err := gzip.NewReader(f)
 	if err != nil {
-		log.Printf("failed to create gzip reader for %s: %v", input, err)
+		logging.Logger.Error().Msgf("failed to create gzip reader for %s: %v", input, err)
 		return err
 	}
 	defer gr.Close()
@@ -58,7 +61,7 @@ func UnZipGzipFile(input string) error {
 	// Create output file
 	out, err := os.Create(output)
 	if err != nil {
-		log.Printf("failed to create output file %s: %v", output, err)
+		logging.Logger.Error().Msgf("failed to create output file %s: %v", output, err)
 		return err
 	}
 	defer out.Close()
@@ -66,10 +69,10 @@ func UnZipGzipFile(input string) error {
 	// Copy decompressed data
 	_, err = io.Copy(out, gr)
 	if err != nil {
-		log.Printf("failed to copy data from %s to %s: %v", input, output, err)
+		logging.Logger.Error().Msgf("failed to copy data from %s to %s: %v", input, output, err)
 		return err
 	}
 
-	log.Printf("unzipped file %s to %s", input, output)
+	logging.Logger.Error().Msgf("unzipped file %s to %s", input, output)
 	return nil
 }

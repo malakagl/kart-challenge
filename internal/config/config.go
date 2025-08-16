@@ -37,27 +37,28 @@ type CouponCodeConfig struct {
 }
 
 type LoggingConfig struct {
-	Debug bool `json:"debug"`
+	Level      string `json:"level"`
+	JsonFormat bool   `yaml:"jsonFormat"`
 }
 
-func LoadConfig(path string) *Config {
+func LoadConfig(path string) (*Config, error) {
 	cfg := &Config{}
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("failed to read config file %s: %v\n", path, err)
-		panic(err)
+		return nil, err
 	}
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
 		log.Printf("failed to parse config file: %v", err)
-		panic(err)
+		return nil, err
 	}
 
 	if err := validate.New().Struct(cfg); err != nil {
 		log.Printf("config validation failed: %v", err)
-		panic(err)
+		return nil, err
 	}
 
-	return cfg
+	return cfg, nil
 }

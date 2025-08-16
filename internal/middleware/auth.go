@@ -1,4 +1,4 @@
-package server
+package middleware
 
 import "net/http"
 
@@ -15,5 +15,5 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 }
 
 func isValidApiKey(key string) bool {
-	return key == "apitest"
+	return key == "apitest" // Replace with actual API key validation logic
 }

@@ -48,7 +48,7 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [x] Implement the OpenAPI spec
 - [x] Implement the unit tests
 - [x] Implement promo code functionality
-- [ ] Implement the database
+- [x] Implement the database
 - [x] Implement the database migrations
 - [ ] Implement logging
 - [ ] Implement the error handling
@@ -61,3 +61,10 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [ ] Implement the GitHub Actions workflow
 - [ ] Implement the GitHub Issues
 - [ ] Implement the GitHub Pull Requests
+- [ ] Implement money package for handling money
+- [ ] Implement the caching
+- [ ] Implement the rate limiting
+- [ ] Implement the security
+- [ ] Implement the monitoring
+- [ ] Implement the tracing
+- [ ] Implement the API documentation

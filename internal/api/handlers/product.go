@@ -3,11 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/pkg/constants"
+	logging "github.com/malakagl/kart-challenge/pkg/logger"
 	"github.com/malakagl/kart-challenge/pkg/services"
 	"github.com/malakagl/kart-challenge/pkg/util"
 )
@@ -35,14 +35,14 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 	pID := chi.URLParam(r, "productID")
 	productId, err := util.StringToUint(pID)
 	if err != nil || productId == 0 {
-		log.Println("Invalid product ID in order request")
+		logging.Logger.Error().Msgf("Invalid product ID in order request: %s", pID)
 		http.Error(w, "Invalid product ID", http.StatusBadRequest)
 		return
 	}
 
 	product, err := h.service.FindByID(productId)
 	if err != nil {
-		log.Default().Println("Error fetching product:", err)
+		logging.Logger.Error().Msgf("Error fetching product: %v", err)
 		if errors.Is(err, constants.ErrProductNotFound) {
 			http.Error(w, "Product not found", http.StatusNotFound)
 			return
@@ -53,6 +53,7 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if product == nil {
+		logging.Logger.Error().Msgf("Product not found for ID: %d", productId)
 		http.NotFound(w, r)
 		return
 	}
