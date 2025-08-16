@@ -1,27 +1,23 @@
 package repositories
 
 import (
-	"sync"
-
-	"github.com/google/uuid"
 	"github.com/malakagl/kart-challenge/pkg/models"
+	"gorm.io/gorm"
 )
 
-var mu = &sync.RWMutex{}
-
-type InMemoryOrderRepo struct {
-	orders []models.Order
+type OrderRepo struct {
+	db *gorm.DB
 }
 
-func NewInMemoryOrderRepo() *InMemoryOrderRepo {
-	return &InMemoryOrderRepo{}
+func NewOrderRepo(db *gorm.DB) *OrderRepo {
+	return &OrderRepo{db: db}
 }
 
-func (r *InMemoryOrderRepo) Create(order models.Order) (string, error) {
-	id := uuid.New().String()
-	order.ID = id
-	mu.Lock()
-	defer mu.Unlock()
-	r.orders = append(r.orders, order)
-	return id, nil
+// Create inserts a new order with products
+func (r *OrderRepo) Create(order models.Order) (string, error) {
+	if err := r.db.Create(&order).Error; err != nil {
+		return "", err
+	}
+
+	return order.ID.String(), nil
 }

@@ -49,10 +49,10 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [x] Implement the unit tests
 - [x] Implement promo code functionality
 - [ ] Implement the database
-- [ ] Implement the database migrations
+- [x] Implement the database migrations
 - [ ] Implement logging
 - [ ] Implement the error handling
-- [ ] Implement the configuration management
+- [x] Implement the configuration management
 - [ ] Implement the integration tests
 - [ ] Implement the Dockerfile
 - [x] Implement the Makefile

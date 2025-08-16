@@ -3,26 +3,31 @@ package repositories
 import (
 	"github.com/malakagl/kart-challenge/pkg/constants"
 	"github.com/malakagl/kart-challenge/pkg/models"
+	"gorm.io/gorm"
 )
 
-type InMemoryProductRepo struct {
-	products []models.Product
+type ProductRepo struct {
+	db *gorm.DB
 }
 
-func NewInMemoryProductRepo(products []models.Product) *InMemoryProductRepo {
-	return &InMemoryProductRepo{products: products}
+func NewProductRepo(db *gorm.DB) *ProductRepo {
+	return &ProductRepo{db: db}
 }
 
-func (r *InMemoryProductRepo) FindAll() ([]models.Product, error) {
-	return r.products, nil
-}
-
-func (r *InMemoryProductRepo) FindByID(id string) (*models.Product, error) {
-	for _, p := range r.products {
-		if p.ID == id {
-			return &p, nil
-		}
+func (r *ProductRepo) FindAll() ([]models.Product, error) {
+	var products []models.Product
+	if err := r.db.Preload("Products").Find(&products).Error; err != nil {
+		return nil, constants.ErrProductNotFound
 	}
 
-	return nil, constants.ErrProductNotFound
+	return products, nil
+}
+
+func (r *ProductRepo) FindByID(id uint) (*models.Product, error) {
+	var product models.Product
+	if err := r.db.Preload("Image").First(&product, "id = ?", id).Error; err != nil {
+		return nil, constants.ErrProductNotFound
+	}
+
+	return &product, nil
 }

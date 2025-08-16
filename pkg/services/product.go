@@ -6,7 +6,7 @@ import (
 
 type ProductRepository interface {
 	FindAll() ([]models.Product, error)
-	FindByID(id string) (*models.Product, error)
+	FindByID(id uint) (*models.Product, error)
 }
 
 type ProductService struct {
@@ -21,7 +21,7 @@ func (s *ProductService) FindAll() ([]models.Product, error) {
 	return s.repo.FindAll()
 }
 
-func (s *ProductService) FindByID(id string) (*models.Product, error) {
+func (s *ProductService) FindByID(id uint) (*models.Product, error) {
 	product, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, err

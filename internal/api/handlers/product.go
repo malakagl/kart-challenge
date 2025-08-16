@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/pkg/constants"
 	"github.com/malakagl/kart-challenge/pkg/services"
+	"github.com/malakagl/kart-challenge/pkg/util"
 )
 
 type ProductHandler struct {
@@ -31,14 +32,15 @@ func (h *ProductHandler) ListProducts(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
-	productID := chi.URLParam(r, "productID")
-	if productID == "" {
-		log.Default().Println("Invalid product ID")
-		http.Error(w, "Invalid ID supplied", http.StatusBadRequest)
+	pID := chi.URLParam(r, "productID")
+	productId, err := util.StringToUint(pID)
+	if err != nil || productId == 0 {
+		log.Println("Invalid product ID in order request")
+		http.Error(w, "Invalid product ID", http.StatusBadRequest)
 		return
 	}
 
-	product, err := h.service.FindByID(productID)
+	product, err := h.service.FindByID(productId)
 	if err != nil {
 		log.Default().Println("Error fetching product:", err)
 		if errors.Is(err, constants.ErrProductNotFound) {

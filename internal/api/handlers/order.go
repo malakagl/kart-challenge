@@ -8,6 +8,7 @@ import (
 	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	"github.com/malakagl/kart-challenge/pkg/services"
+	"github.com/malakagl/kart-challenge/pkg/util"
 )
 
 type OrderHandler struct {
@@ -34,27 +35,29 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order := models.Order{
-		Items: orderReq.Items,
-	}
+	order := models.Order{}
+	orderProducts := make([]*models.OrderProduct, len(orderReq.Items))
 	products := make([]*models.Product, len(orderReq.Items))
 	for i, item := range orderReq.Items {
-		if item.ProductID == "" {
+		productId, err := util.StringToUint(item.ProductID)
+		if err != nil || productId == 0 {
 			log.Println("Invalid product ID in order request")
 			http.Error(w, "Invalid product ID", http.StatusBadRequest)
 			return
 		}
 
-		product, err := h.productService.FindByID(item.ProductID)
+		product, err := h.productService.FindByID(productId)
 		if err != nil || product == nil {
 			log.Println("Error fetching product:", err)
 			http.Error(w, "Failed to fetch product", http.StatusBadRequest)
 			return
 		}
 
+		orderProducts[i] = &models.OrderProduct{ProductID: item.ProductID, Quantity: item.Quantity}
 		products[i] = product
 		order.Total += product.Price * float64(item.Quantity)
 	}
+	order.Products = orderProducts
 
 	orderID, err := h.orderService.Create(order)
 	if err != nil {
@@ -64,7 +67,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(models.Order{
+	err = json.NewEncoder(w).Encode(models.OrderResponse{
 		ID:       orderID,
 		Items:    orderReq.Items,
 		Products: products,

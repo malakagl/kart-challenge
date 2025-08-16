@@ -23,7 +23,7 @@ func (m *MockProductRepository) FindAll() ([]models.Product, error) {
 	return args.Get(0).([]models.Product), args.Error(1)
 }
 
-func (m *MockProductRepository) FindByID(productID string) (*models.Product, error) {
+func (m *MockProductRepository) FindByID(productID uint) (*models.Product, error) {
 	args := m.Called(productID)
 	return args.Get(0).(*models.Product), args.Error(1)
 }
@@ -33,8 +33,8 @@ func TestListProducts_Success(t *testing.T) {
 	productHandler := NewProductHandler(mockRepo)
 
 	products := []models.Product{
-		{ID: "123", Name: "Product 1", Price: 100},
-		{ID: "456", Name: "Product 2", Price: 200},
+		{ID: 123, Name: "Product 1", Price: 100},
+		{ID: 456, Name: "Product 2", Price: 200},
 	}
 	mockRepo.On("FindAll").Return(products, nil)
 
@@ -71,8 +71,8 @@ func TestGetProductByID_Success(t *testing.T) {
 	mockRepo := new(MockProductRepository)
 	productHandler := NewProductHandler(mockRepo)
 
-	product := &models.Product{ID: "123", Name: "Product 1", Price: 100}
-	mockRepo.On("FindByID", "123").Return(product, nil)
+	product := &models.Product{ID: 123, Name: "Product 1", Price: 100}
+	mockRepo.On("FindByID", uint(123)).Return(product, nil)
 
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("productID", "123")
@@ -95,7 +95,7 @@ func TestGetProductByID_NotFound(t *testing.T) {
 	mockRepo := new(MockProductRepository)
 	productHandler := NewProductHandler(mockRepo)
 
-	mockRepo.On("FindByID", "123").Return(&models.Product{}, constants.ErrProductNotFound)
+	mockRepo.On("FindByID", uint(123)).Return(&models.Product{}, constants.ErrProductNotFound)
 
 	req := httptest.NewRequest(http.MethodGet, "/products/123", nil)
 	rctx := chi.NewRouteContext()

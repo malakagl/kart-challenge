@@ -9,15 +9,14 @@ import (
 	handlers2 "github.com/malakagl/kart-challenge/internal/api/handlers"
 	"github.com/malakagl/kart-challenge/internal/config"
 	"github.com/malakagl/kart-challenge/internal/couponcode"
-	"github.com/malakagl/kart-challenge/internal/db"
-	"github.com/malakagl/kart-challenge/pkg/models"
+	"github.com/malakagl/kart-challenge/internal/database"
 	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
 	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
 
 func Start(cfg *config.Config) error {
-	if err := db.RunMigrations(); err != nil {
-		log.Fatalf("db migrations failed: %v", err)
+	if err := database.RunMigrations(); err != nil {
+		log.Fatalf("database migrations failed: %v", err)
 	}
 
 	if !cfg.CouponCodeConfig.Unzipped {
@@ -26,7 +25,10 @@ func Start(cfg *config.Config) error {
 		}
 	}
 
-	//couponcode.LoadCouponCodes()
+	db, err := database.Connect(&cfg.Database)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
 
 	r := chi.NewRouter()
 
@@ -37,17 +39,14 @@ func Start(cfg *config.Config) error {
 		_, _ = w.Write([]byte("OK"))
 	})
 
-	productRepo := repositories2.NewInMemoryProductRepo([]models.Product{
-		{ID: "1", Name: "Burger", Price: 9.99, Category: "Fast Food"},
-		{ID: "2", Name: "Pizza", Price: 14.50, Category: "Italian"},
-	})
+	productRepo := repositories2.NewProductRepo(db)
 	productService := services2.NewProductService(productRepo)
 	productHandler := handlers2.NewProductHandler(productService)
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/products/{productID}", productHandler.GetProductByID)
 
 	v := couponcode.NewValidator(cfg.CouponCodeConfig.FilePaths)
-	orderRepo := repositories2.NewInMemoryOrderRepo()
+	orderRepo := repositories2.NewOrderRepo(db)
 	orderService := services2.NewOrderService(orderRepo)
 	orderHandler := handlers2.NewOrderHandler(orderService, productService, v)
 	r.Post("/orders", orderHandler.CreateOrder)
