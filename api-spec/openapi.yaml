@@ -127,7 +127,7 @@ components:
       properties:
         couponCode:
           type: string
-          description: Optional promo code applied to the order
+          description: Optional couponcode code applied to the order
           examples: ["HAPPYHRS"]
         items:
           type: array

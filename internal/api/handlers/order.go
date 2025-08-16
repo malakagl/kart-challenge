@@ -5,17 +5,19 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	"github.com/malakagl/kart-challenge/pkg/services"
 )
 
 type OrderHandler struct {
-	orderService   services.OrderRepository
-	productService services.ProductRepository
+	orderService    services.OrderRepository
+	productService  services.ProductRepository
+	couponValidator couponcode.CouponValidator
 }
 
-func NewOrderHandler(o services.OrderRepository, p services.ProductRepository) *OrderHandler {
-	return &OrderHandler{orderService: o, productService: p}
+func NewOrderHandler(o services.OrderRepository, p services.ProductRepository, v couponcode.CouponValidator) *OrderHandler {
+	return &OrderHandler{orderService: o, productService: p, couponValidator: v}
 }
 
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -26,9 +28,9 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if orderReq.CouponCode != "" && !IsPromoCodeValid(orderReq.CouponCode) {
-		log.Println("Invalid promo code:", orderReq.CouponCode)
-		http.Error(w, "Invalid promo code", http.StatusUnprocessableEntity)
+	if orderReq.CouponCode == "" || !h.couponValidator.ValidateCouponCode(orderReq.CouponCode) {
+		log.Println("Invalid coupon code:", orderReq.CouponCode)
+		http.Error(w, "Invalid coupon code", http.StatusUnprocessableEntity)
 		return
 	}
 

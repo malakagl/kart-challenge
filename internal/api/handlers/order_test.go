@@ -36,11 +36,21 @@ func (m *MockProductService) FindAll() ([]models.Product, error) {
 	return args.Get(0).([]models.Product), args.Error(1)
 }
 
+type MockCouponValidator struct {
+	mock.Mock
+}
+
+func (m *MockCouponValidator) ValidateCouponCode(code string) bool {
+	args := m.Called(code)
+	return args.Bool(0)
+}
+
 func TestCreateOrder_Success(t *testing.T) {
 	mockOrderService := new(MockOrderService)
 	mockProductService := new(MockProductService)
+	mockCouponValidator := new(MockCouponValidator)
 
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService)
+	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
 
 	orderReq := models.OrderRequest{
 		Items: []models.OrderItem{
@@ -52,6 +62,7 @@ func TestCreateOrder_Success(t *testing.T) {
 	product := &models.Product{ID: "123", Name: "Test Product", Price: 100}
 	mockProductService.On("FindByID", "123").Return(product, nil)
 	mockOrderService.On("Create", mock.Anything).Return("order123", nil)
+	mockCouponValidator.On("ValidateCouponCode", "FIFTYOFF").Return(true)
 
 	body, _ := json.Marshal(orderReq)
 	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
@@ -75,7 +86,7 @@ func TestCreateOrder_InvalidRequestBody(t *testing.T) {
 	mockOrderService := new(MockOrderService)
 	mockProductService := new(MockProductService)
 
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService)
+	orderHandler := NewOrderHandler(mockOrderService, mockProductService, nil)
 
 	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
@@ -87,13 +98,45 @@ func TestCreateOrder_InvalidRequestBody(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
+func TestCreateOrder_InvalidCouponCode(t *testing.T) {
+	mockOrderService := new(MockOrderService)
+	mockProductService := new(MockProductService)
+	mockCouponValidator := new(MockCouponValidator)
+
+	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
+
+	orderReq := models.OrderRequest{
+		Items: []models.OrderItem{
+			{ProductID: "123", Quantity: 2},
+		},
+		CouponCode: "INVALIDCODE",
+	}
+
+	product := &models.Product{ID: "123", Name: "Test Product", Price: 100}
+	mockProductService.On("FindByID", "123").Return(product, nil)
+	mockOrderService.On("Create", mock.Anything).Return("order123", nil)
+	mockCouponValidator.On("ValidateCouponCode", "INVALIDCODE").Return(false)
+
+	body, _ := json.Marshal(orderReq)
+	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+
+	orderHandler.CreateOrder(w, req)
+
+	resp := w.Result()
+	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
+}
+
 func TestCreateOrder_InvalidProductID(t *testing.T) {
 	mockOrderService := new(MockOrderService)
 	mockProductService := new(MockProductService)
-
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService)
+	mockCouponValidator := new(MockCouponValidator)
+	mockCouponValidator.On("ValidateCouponCode", "VALIDCODE").Return(true)
+	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
 
 	orderReq := models.OrderRequest{
+		CouponCode: "VALIDCODE",
 		Items: []models.OrderItem{
 			{ProductID: "", Quantity: 2},
 		},
@@ -113,10 +156,12 @@ func TestCreateOrder_InvalidProductID(t *testing.T) {
 func TestCreateOrder_ProductNotFound(t *testing.T) {
 	mockOrderService := new(MockOrderService)
 	mockProductService := new(MockProductService)
-
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService)
+	mockCouponValidator := new(MockCouponValidator)
+	mockCouponValidator.On("ValidateCouponCode", "VALIDCODE").Return(true)
+	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
 
 	orderReq := models.OrderRequest{
+		CouponCode: "VALIDCODE",
 		Items: []models.OrderItem{
 			{ProductID: "123", Quantity: 2},
 		},
@@ -138,10 +183,12 @@ func TestCreateOrder_ProductNotFound(t *testing.T) {
 func TestCreateOrder_FailedToCreateOrder(t *testing.T) {
 	mockOrderService := new(MockOrderService)
 	mockProductService := new(MockProductService)
-
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService)
+	mockCouponValidator := new(MockCouponValidator)
+	mockCouponValidator.On("ValidateCouponCode", "VALIDCODE").Return(true)
+	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
 
 	orderReq := models.OrderRequest{
+		CouponCode: "VALIDCODE",
 		Items: []models.OrderItem{
 			{ProductID: "123", Quantity: 2},
 		},

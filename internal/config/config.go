@@ -9,25 +9,31 @@ import (
 )
 
 type Config struct {
-	Server   ServerConfig   `json:"server"`
-	Database DatabaseConfig `json:"database"`
-	Logging  LoggingConfig  `json:"logging"`
+	Server           ServerConfig     `yaml:"server"`
+	Database         DatabaseConfig   `yaml:"database"`
+	Logging          LoggingConfig    `yaml:"logging"`
+	CouponCodeConfig CouponCodeConfig `yaml:"couponCodeConfig"`
 }
 
 type ServerConfig struct {
-	Host string `json:"host"`
-	Port int    `json:"port" validate:"required"`
+	Host string `yaml:"host"`
+	Port int    `yaml:"port" validate:"required"`
 }
 
 type DatabaseConfig struct {
-	Host       string `json:"host" validate:"required"`
-	Port       int    `json:"port" validate:"required"`
-	Name       string `json:"name" validate:"required"`
-	User       string `json:"user" validate:"required"`
-	Password   string `json:"password" validate:"required"`
-	SSLEnabled bool   `json:"sslEnabled"`
-	Debug      bool   `json:"debug"`
-	Type       string `json:"type" validate:"required"` // e.g., "postgres", "sqlite"
+	Host       string `yaml:"host" validate:"required"`
+	Port       int    `yaml:"port" validate:"required"`
+	Name       string `yaml:"name" validate:"required"`
+	User       string `yaml:"user" validate:"required"`
+	Password   string `yaml:"password" validate:"required"`
+	SSLEnabled bool   `yaml:"sslEnabled"`
+	Debug      bool   `yaml:"debug"`
+	Type       string `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
+}
+
+type CouponCodeConfig struct {
+	Unzipped  bool     `yaml:"unzipped"`
+	FilePaths []string `yaml:"filePaths"`
 }
 
 type LoggingConfig struct {
@@ -39,15 +45,18 @@ func LoadConfig(path string) *Config {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatalf("failed to read config file: %v", err)
+		log.Printf("failed to read config file %s: %v\n", path, err)
+		panic(err)
 	}
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
-		log.Fatalf("failed to parse config file: %v", err)
+		log.Printf("failed to parse config file: %v", err)
+		panic(err)
 	}
 
 	if err := validate.New().Struct(cfg); err != nil {
-		log.Fatalf("config validation failed: %v", err)
+		log.Printf("config validation failed: %v", err)
+		panic(err)
 	}
 
 	return cfg

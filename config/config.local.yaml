@@ -14,3 +14,10 @@ database:
 
 logging:
   debug: true
+
+couponCodeConfig:
+  unzipped: true
+  filePaths:
+    - ./promocodes/couponbase1.gz
+    - ./promocodes/couponbase2.gz
+    - ./promocodes/couponbase3.gz

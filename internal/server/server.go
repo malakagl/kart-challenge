@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	handlers2 "github.com/malakagl/kart-challenge/internal/api/handlers"
 	"github.com/malakagl/kart-challenge/internal/config"
+	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/internal/db"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
@@ -19,7 +20,13 @@ func Start(cfg *config.Config) error {
 		log.Fatalf("db migrations failed: %v", err)
 	}
 
-	//promo.LoadCouponCodes()
+	if !cfg.CouponCodeConfig.Unzipped {
+		if err := couponcode.SetupCouponCodeFiles(cfg.CouponCodeConfig.FilePaths); err != nil {
+			log.Fatalf("failed to load coupon codes: %v", err)
+		}
+	}
+
+	//couponcode.LoadCouponCodes()
 
 	r := chi.NewRouter()
 
@@ -39,9 +46,10 @@ func Start(cfg *config.Config) error {
 	r.Get("/products", productHandler.ListProducts)
 	r.Get("/products/{productID}", productHandler.GetProductByID)
 
+	v := couponcode.NewValidator(cfg.CouponCodeConfig.FilePaths)
 	orderRepo := repositories2.NewInMemoryOrderRepo()
 	orderService := services2.NewOrderService(orderRepo)
-	orderHandler := handlers2.NewOrderHandler(orderService, productService)
+	orderHandler := handlers2.NewOrderHandler(orderService, productService, v)
 	r.Post("/orders", orderHandler.CreateOrder)
 
 	serverURL := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)

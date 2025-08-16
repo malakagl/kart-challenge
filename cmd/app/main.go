@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 
 	"github.com/malakagl/kart-challenge/internal/config"
@@ -16,7 +15,7 @@ func main() {
 
 	cfg := config.LoadConfig(cfgPath)
 
-	fmt.Println("Server starting on port:", cfg.Server.Port)
+	log.Println("Server setting up on port:", cfg.Server.Port)
 	if err := server.Start(cfg); err != nil {
 		log.Fatalf("server start up failed: %v", err)
 	}
