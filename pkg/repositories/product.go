@@ -2,7 +2,7 @@ package repositories
 
 import (
 	"github.com/malakagl/kart-challenge/pkg/constants"
-	logging "github.com/malakagl/kart-challenge/pkg/logger"
+	"github.com/malakagl/kart-challenge/pkg/log"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	"gorm.io/gorm"
 )
@@ -27,7 +27,7 @@ func (r *ProductRepo) FindAll() ([]models.Product, error) {
 func (r *ProductRepo) FindByID(id uint) (*models.Product, error) {
 	var product models.Product
 	if err := r.db.Preload("Image").First(&product, "id = ?", id).Error; err != nil {
-		logging.Logger.Error().Msgf("Error fetching product with ID %d: %v", id, err)
+		log.Error().Msgf("Error fetching product with ID %d: %v", id, err)
 		return nil, constants.ErrProductNotFound
 	}
 

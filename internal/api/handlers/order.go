@@ -5,32 +5,46 @@ import (
 	"net/http"
 
 	"github.com/malakagl/kart-challenge/internal/couponcode"
-	logging "github.com/malakagl/kart-challenge/pkg/logger"
+	"github.com/malakagl/kart-challenge/pkg/log"
 	"github.com/malakagl/kart-challenge/pkg/models"
 	"github.com/malakagl/kart-challenge/pkg/services"
 	"github.com/malakagl/kart-challenge/pkg/util"
 )
 
 type OrderHandler struct {
-	orderService    services.OrderRepository
-	productService  services.ProductRepository
-	couponValidator couponcode.CouponValidator
+	orderService      services.OrderRepository
+	productService    services.ProductRepository
+	couponValidator   couponcode.CouponValidator
+	couponCodeService services.CouponCodeRepository
 }
 
-func NewOrderHandler(o services.OrderRepository, p services.ProductRepository, v couponcode.CouponValidator) *OrderHandler {
-	return &OrderHandler{orderService: o, productService: p, couponValidator: v}
+func NewOrderHandler(o services.OrderRepository, p services.ProductRepository, v couponcode.CouponValidator, c services.CouponCodeRepository) *OrderHandler {
+	return &OrderHandler{orderService: o, productService: p, couponValidator: v, couponCodeService: c}
+}
+
+func (h *OrderHandler) isCouponCodeValid(code string) bool {
+	if len(code) < 8 || len(code) > 10 {
+		return false
+	}
+
+	if h.couponCodeService.CountFilesByCode(code) > 1 {
+		log.Error().Msgf("Coupon code %s is valid: found in multiple files", code)
+		return true
+	}
+
+	return false
 }
 
 func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var orderReq models.OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
-		logging.Logger.Error().Msgf("Error decoding request body: %v", err)
+		log.Error().Msgf("Error decoding request body: %v", err)
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if orderReq.CouponCode == "" || !h.couponValidator.ValidateCouponCode(orderReq.CouponCode) {
-		logging.Logger.Error().Msgf("Invalid coupon code: %s", orderReq.CouponCode)
+	if orderReq.CouponCode == "" || h.couponCodeService.CountFilesByCode(orderReq.CouponCode) > 1 { // !h.couponValidator.ValidateCouponCode(orderReq.CouponCode)
+		log.Error().Msgf("Invalid coupon code: %s", orderReq.CouponCode)
 		http.Error(w, "Invalid coupon code", http.StatusUnprocessableEntity)
 		return
 	}
@@ -41,14 +55,14 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	for i, item := range orderReq.Items {
 		productId, err := util.StringToUint(item.ProductID)
 		if err != nil || productId == 0 {
-			logging.Logger.Error().Msg("Invalid product ID in order request")
+			log.Error().Msg("Invalid product ID in order request")
 			http.Error(w, "Invalid product ID", http.StatusBadRequest)
 			return
 		}
 
 		product, err := h.productService.FindByID(productId)
 		if err != nil || product == nil {
-			logging.Logger.Error().Msgf("Error fetching product: %v", err)
+			log.Error().Msgf("Error fetching product: %v", err)
 			http.Error(w, "Failed to fetch product", http.StatusBadRequest)
 			return
 		}
@@ -61,7 +75,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	orderID, err := h.orderService.Create(order)
 	if err != nil {
-		logging.Logger.Error().Msgf("Error creating orderReq: %v", err)
+		log.Error().Msgf("Error creating orderReq: %v", err)
 		http.Error(w, "Failed to create orderReq", http.StatusInternalServerError)
 		return
 	}
@@ -73,7 +87,7 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		Products: products,
 	})
 	if err != nil {
-		logging.Logger.Error().Msgf("Error encoding response: %v", err)
+		log.Error().Msgf("Error encoding response: %v", err)
 		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 		return
 	}

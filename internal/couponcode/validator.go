@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	logging "github.com/malakagl/kart-challenge/pkg/logger"
+	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
 type CouponValidator interface {
@@ -66,9 +66,9 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 }
 
 func (v *Validator) ValidateCouponCode(code string) bool {
-	logging.Logger.Debug().Msgf("validating coupon code %s", code)
+	log.Debug().Msgf("validating coupon code %s", code)
 	defer func(start time.Time) {
-		logging.Logger.Debug().Msgf("validated coupon code in %s", time.Since(start).String())
+		log.Debug().Msgf("validated coupon code in %s", time.Since(start).String())
 	}(time.Now())
 
 	if code == "TEST" {

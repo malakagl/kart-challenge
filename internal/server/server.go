@@ -10,27 +10,27 @@ import (
 	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/internal/database"
 	"github.com/malakagl/kart-challenge/internal/middleware"
-	logging "github.com/malakagl/kart-challenge/pkg/logger"
+	"github.com/malakagl/kart-challenge/pkg/log"
 	repositories2 "github.com/malakagl/kart-challenge/pkg/repositories"
 	services2 "github.com/malakagl/kart-challenge/pkg/services"
 )
 
 func Start(cfg *config.Config) error {
 	if err := database.RunMigrations(cfg.Database); err != nil {
-		logging.Logger.Error().Msgf("database migrations failed: %v", err)
+		log.Error().Msgf("database migrations failed: %v", err)
 		return err
 	}
 
 	if !cfg.CouponCode.Unzipped {
 		if err := couponcode.SetupCouponCodeFiles(cfg.CouponCode.FilePaths); err != nil {
-			logging.Logger.Error().Msgf("failed to load coupon codes: %v", err)
+			log.Error().Msgf("failed to load coupon codes: %v", err)
 			return err
 		}
 	}
 
 	db, err := database.Connect(&cfg.Database)
 	if err != nil {
-		logging.Logger.Error().Msgf("failed to connect to database: %v", err)
+		log.Error().Msgf("failed to connect to database: %v", err)
 		return err
 	}
 
@@ -52,10 +52,12 @@ func Start(cfg *config.Config) error {
 	v := couponcode.NewValidator(cfg.CouponCode.FilePaths)
 	orderRepo := repositories2.NewOrderRepo(db)
 	orderService := services2.NewOrderService(orderRepo)
-	orderHandler := handlers2.NewOrderHandler(orderService, productService, v)
+	couponCodeRepo := repositories2.NewCouponCodeRepository(db)
+	couponCodeService := services2.NewCouponCodeService(couponCodeRepo)
+	orderHandler := handlers2.NewOrderHandler(orderService, productService, v, couponCodeService)
 	r.Post("/orders", orderHandler.CreateOrder)
 
 	serverURL := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	logging.Logger.Info().Msgf("Server starting on %s", serverURL)
+	log.Info().Msgf("Server starting on %s", serverURL)
 	return http.ListenAndServe(serverURL, r)
 }

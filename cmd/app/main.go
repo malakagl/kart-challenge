@@ -6,7 +6,7 @@ import (
 
 	"github.com/malakagl/kart-challenge/internal/config"
 	"github.com/malakagl/kart-challenge/internal/server"
-	logging "github.com/malakagl/kart-challenge/pkg/logger"
+	logging "github.com/malakagl/kart-challenge/pkg/log"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 	}
 
 	logging.Init("kart-challenge", cfg.Logging)
-	logging.Logger.Info().Msgf("Server setting up on port: %d", cfg.Server.Port)
+	logging.Info().Msgf("Server setting up on port: %d", cfg.Server.Port)
 	if err := server.Start(cfg); err != nil {
 		logging.Logger.Fatal().Msgf("server start up failed: %v", err)
 	}

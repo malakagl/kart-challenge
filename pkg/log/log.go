@@ -1,4 +1,4 @@
-package logging
+package log
 
 import (
 	"os"
@@ -37,4 +37,28 @@ func Init(serviceName string, cfg config.LoggingConfig) {
 		Level(level)
 
 	log.Logger = Logger
+}
+
+func Info() *zerolog.Event {
+	return Logger.Info()
+}
+
+func Debug() *zerolog.Event {
+	return Logger.Debug()
+}
+
+func Warn() *zerolog.Event {
+	return Logger.Warn()
+}
+
+func Error() *zerolog.Event {
+	return Logger.Error()
+}
+
+func Fatal() *zerolog.Event {
+	return Logger.Fatal()
+}
+
+func Panic() *zerolog.Event {
+	return Logger.Panic()
 }
