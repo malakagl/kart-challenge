@@ -1,14 +1,12 @@
 package services
 
-type CouponCodeRepository interface {
-	CountFilesByCode(code string) int64
-}
+import "github.com/malakagl/kart-challenge/pkg/repositories"
 
 type CouponCodeService struct {
-	repo CouponCodeRepository
+	repo repositories.CouponCodeRepo
 }
 
-func NewCouponCodeService(r CouponCodeRepository) *CouponCodeService {
+func NewCouponCodeService(r repositories.CouponCodeRepo) *CouponCodeService {
 	return &CouponCodeService{repo: r}
 }
 

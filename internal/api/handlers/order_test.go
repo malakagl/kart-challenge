@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/malakagl/kart-challenge/pkg/constants"
-	"github.com/malakagl/kart-challenge/pkg/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

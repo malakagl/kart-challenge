@@ -1,21 +1,21 @@
 package repositories
 
 import (
-	"github.com/malakagl/kart-challenge/pkg/models"
+	"github.com/malakagl/kart-challenge/pkg/models/db"
 	"gorm.io/gorm"
 )
 
-type CouponCodeRepository struct {
+type CouponCodeRepo struct {
 	db *gorm.DB
 }
 
-func NewCouponCodeRepository(db *gorm.DB) *CouponCodeRepository {
-	return &CouponCodeRepository{db: db}
+func NewCouponCodeRepository(db *gorm.DB) CouponCodeRepo {
+	return CouponCodeRepo{db: db}
 }
 
-func (r *CouponCodeRepository) CountFilesByCode(code string) int64 {
+func (r *CouponCodeRepo) CountFilesByCode(code string) int64 {
 	var count int64
-	r.db.Model(&models.CouponCode{}).
+	r.db.Model(&db.CouponCode{}).
 		Where("code = ?", code).
 		Distinct("file_id").
 		Count(&count)

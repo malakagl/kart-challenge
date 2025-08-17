@@ -66,3 +66,4 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [ ] Implement the security
 - [ ] Implement the monitoring
 - [ ] Implement the tracing
+- [ ] Create private schema for postgres

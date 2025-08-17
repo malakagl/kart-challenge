@@ -1,4 +1,4 @@
-package models
+package db
 
 import (
 	"time"
@@ -19,18 +19,4 @@ type OrderProduct struct {
 	OrderID   uuid.UUID `gorm:"type:uuid;not null;index"`
 	ProductID string    `gorm:"not null" json:"productId" validate:"required"`
 	Quantity  int       `gorm:"not null" json:"quantity" validate:"required,min=1"`
-}
-
-type OrderRequest struct {
-	CouponCode string         `json:"couponCode,omitempty"`
-	Items      []OrderProduct `json:"items" validate:"required,dive,required"`
-}
-
-type OrderResponse struct {
-	ID        string         `json:"id"`
-	Total     float64        `json:"total"`
-	Discounts float64        `json:"discounts,omitempty"`
-	Items     []OrderProduct `json:"items"`
-	Products  []*Product     `json:"products"`
-	CreatedAt time.Time      `json:"createdAt"`
 }

@@ -1,8 +1,6 @@
-package models
+package db
 
-import (
-	"time"
-)
+import "time"
 
 // Product represents the products table
 type Product struct {
