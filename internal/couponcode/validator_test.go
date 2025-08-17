@@ -58,25 +58,25 @@ func TestValidateCouponCode_PlainText(t *testing.T) {
 	file3 := createTempFile(t, []string{"QWE22222"})
 	defer os.Remove(file3)
 
-	v := couponcode.NewValidator([]string{file1, file2, file3})
+	couponcode.SetCouponCodeFiles([]string{file1, file2, file3})
 
 	// code present in 2 files → should return true
-	if !v.ValidateCouponCode("ABC12345") {
+	if !couponcode.ValidateCouponCode("ABC12345") {
 		t.Error("Expected true, got false")
 	}
 
 	// code present in 1 file → should return false
-	if v.ValidateCouponCode("QWE22222") {
+	if couponcode.ValidateCouponCode("QWE22222") {
 		t.Error("Expected false, got true")
 	}
 
 	// code not present → should return false
-	if v.ValidateCouponCode("NOTFOUND") {
+	if couponcode.ValidateCouponCode("NOTFOUND") {
 		t.Error("Expected false, got true")
 	}
 
 	// code too short → should return false
-	if v.ValidateCouponCode("SHORT") {
+	if couponcode.ValidateCouponCode("SHORT") {
 		t.Error("Expected false for short code")
 	}
 }
@@ -88,15 +88,15 @@ func TestValidateCouponCode_GzipFiles(t *testing.T) {
 	file2 := createTempGzipFile(t, []string{"ABC12345", "LMN11111"})
 	defer os.Remove(file2)
 
-	v := couponcode.NewValidator([]string{file1, file2})
+	couponcode.SetCouponCodeFiles([]string{file1, file2})
 
 	// code present in 2 files → should return true
-	if !v.ValidateCouponCode("ABC12345") {
+	if !couponcode.ValidateCouponCode("ABC12345") {
 		t.Error("Expected true, got false")
 	}
 
 	// code present in 1 file → should return false
-	if v.ValidateCouponCode("LMN11111") {
+	if couponcode.ValidateCouponCode("LMN11111") {
 		t.Error("Expected false, got true")
 	}
 }
@@ -108,15 +108,15 @@ func TestValidateCouponCode_MixedFiles(t *testing.T) {
 	file2 := createTempGzipFile(t, []string{"ABC12345", "LMN11111"})
 	defer os.Remove(file2)
 
-	v := couponcode.NewValidator([]string{file1, file2})
+	couponcode.SetCouponCodeFiles([]string{file1, file2})
 
 	// code present in both → should return true
-	if !v.ValidateCouponCode("ABC12345") {
+	if !couponcode.ValidateCouponCode("ABC12345") {
 		t.Error("Expected true, got false")
 	}
 
 	// code present in only one → should return false
-	if v.ValidateCouponCode("LMN11111") {
+	if couponcode.ValidateCouponCode("LMN11111") {
 		t.Error("Expected false, got true")
 	}
 }

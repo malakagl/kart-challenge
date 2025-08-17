@@ -9,7 +9,7 @@ import (
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		apiKey := r.Header.Get("api_key")
-		if apiKey == "" || !isValidApiKey(apiKey) {
+		if apiKey == "" || !isValidApiKey(apiKey, r.Method, r.RequestURI) {
 			response.Error(w, http.StatusUnauthorized, "AuthError", http.StatusText(http.StatusUnauthorized))
 			return
 		}
@@ -18,6 +18,20 @@ func AuthenticationMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func isValidApiKey(key string) bool {
-	return key == "apitest" // Replace with actual API key validation logic
+type accessKey struct {
+	Method string
+	Uri    string
+}
+
+var apiKeyMap = map[accessKey]string{
+	{Method: http.MethodPost, Uri: "/order"}: "create_order",
+}
+
+// Replace with actual API key validation logic
+func isValidApiKey(key, reqMethod, reqURI string) bool {
+	if v, ok := apiKeyMap[accessKey{Method: reqMethod, Uri: reqURI}]; ok {
+		return v == key
+	}
+
+	return key == "apitest" // default key
 }

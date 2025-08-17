@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/internal/config"
+	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/internal/database"
 	"github.com/malakagl/kart-challenge/internal/middleware"
 	"github.com/malakagl/kart-challenge/internal/routes"
@@ -19,6 +20,7 @@ func Start(cfg *config.Config) error {
 		return err
 	}
 
+	couponcode.SetCouponCodeFiles(cfg.CouponCode.FilePaths)
 	db, err := database.Connect(&cfg.Database)
 	if err != nil {
 		log.Error().Msgf("failed to connect to database: %v", err)

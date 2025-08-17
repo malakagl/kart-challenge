@@ -44,6 +44,24 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 <- fixed 
 # check coverage
 go test ./... -coverprofile=coverage.out
 go tool cover -func=coverage.out
+
+# deploy
+minikube start --memory 10240 --cpus 4
+docker build -f ./docker/Dockerfile -t kart-challenge:latest .
+minikube image load kart-challenge:latest
+kubectl apply -f deployment/deployment.yaml
+
+# verify
+kubectl get deployments -A
+minikube service kart-challenge --url -n kart-challenge
+kubectl get pods -n kart-challenge
+kubectl logs kart-challenge-5d8ccdfcdd-qh8cb -n kart-challenge
+
+# clean up
+kubectl delete service kart-challenge -n kart-challenge
+kubectl delete deployment kart-challenge -n kart-challenge
+minikube stop
+minikube delete --all
 ```
 
 ### Notes

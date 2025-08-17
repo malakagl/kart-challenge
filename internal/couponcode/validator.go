@@ -15,16 +15,10 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
-type CouponValidator interface {
-	ValidateCouponCode(code string) bool
-}
+var couponCodeFiles []string
 
-type Validator struct {
-	CouponCodeFiles []string
-}
-
-func NewValidator(couponCodeFiles []string) *Validator {
-	return &Validator{CouponCodeFiles: couponCodeFiles}
+func SetCouponCodeFiles(f []string) {
+	couponCodeFiles = f
 }
 
 func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *sync.WaitGroup, cancel context.CancelFunc) {
@@ -34,7 +28,7 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	if err != nil {
 		return
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var reader io.Reader = f
 
@@ -42,9 +36,10 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	if strings.HasSuffix(strings.ToLower(filepath.Ext(path)), ".gz") {
 		gz, err := gzip.NewReader(f)
 		if err != nil {
+			log.Error().Msgf("Error creating gzip reader: %v", err)
 			return
 		}
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 		reader = gz
 	}
 
@@ -52,6 +47,7 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
+			log.Debug().Msgf("Context done: %v", path)
 			return
 		default:
 			if strings.TrimSpace(scanner.Text()) == code {
@@ -65,15 +61,11 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	}
 }
 
-func (v *Validator) ValidateCouponCode(code string) bool {
+func ValidateCouponCode(code string) bool {
 	log.Debug().Msgf("validating coupon code %s", code)
 	defer func(start time.Time) {
 		log.Debug().Msgf("validated coupon code in %s", time.Since(start).String())
 	}(time.Now())
-
-	if code == "TEST" {
-		return true
-	}
 
 	if len(code) < 8 || len(code) > 10 {
 		return false
@@ -85,7 +77,7 @@ func (v *Validator) ValidateCouponCode(code string) bool {
 	var wg sync.WaitGroup
 	var count atomic.Int32
 
-	for _, f := range v.CouponCodeFiles {
+	for _, f := range couponCodeFiles {
 		wg.Add(1)
 		go worker(ctx, f, code, &count, &wg, cancel)
 	}

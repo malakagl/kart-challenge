@@ -33,7 +33,6 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to get underlying sql.DB: %w", err)
 	}
 
-	// Optional: test connection
 	if err := sqlDB.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
@@ -46,7 +45,7 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	if dbInstance == nil {
 		dbInstance = db
 	} else {
-		log.Error().Msg("Reusing existing GORM database connection")
+		log.Debug().Msg("Reusing existing GORM database connection")
 	}
 
 	return dbInstance, nil

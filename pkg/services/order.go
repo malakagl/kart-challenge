@@ -1,6 +1,7 @@
 package services
 
 import (
+	"github.com/malakagl/kart-challenge/internal/couponcode"
 	"github.com/malakagl/kart-challenge/pkg/constants"
 	"github.com/malakagl/kart-challenge/pkg/log"
 	"github.com/malakagl/kart-challenge/pkg/models/db"
@@ -37,13 +38,17 @@ func (o *OrderService) isCouponCodeValid(code string) (bool, error) {
 		return false, nil
 	}
 
-	count, err := o.couponCodeRepo.CountFilesByCode(code)
-	if count > 1 {
-		log.Error().Msgf("Coupon code %s is valid: found in multiple files", code)
+	if couponcode.ValidateCouponCode(code) {
 		return true, nil
 	}
+	// use database
+	// count, err := o.couponCodeRepo.CountFilesByCode(code)
+	// if count > 1 {
+	// 	log.Error().Msgf("Coupon code %s is valid: found in multiple files", code)
+	// 	return true, nil
+	// }
 
-	return false, err
+	return false, nil
 }
 
 func (o *OrderService) Create(req *request.OrderRequest) (*response.OrderResponse, error) {
