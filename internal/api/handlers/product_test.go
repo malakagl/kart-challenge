@@ -2,125 +2,124 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/pkg/constants"
-	"github.com/malakagl/kart-challenge/pkg/models"
-	"github.com/stretchr/testify/assert"
+	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 	"github.com/stretchr/testify/mock"
 )
 
-type MockProductRepository struct {
+// MockProductService implements ProductService for testing
+type MockProductService struct {
 	mock.Mock
 }
 
-func (m *MockProductRepository) FindAll() ([]models.Product, error) {
+func (m *MockProductService) FindAll() (*response.ProductsResponse, error) {
 	args := m.Called()
-	return args.Get(0).([]models.Product), args.Error(1)
+	return args.Get(0).(*response.ProductsResponse), args.Error(1)
 }
 
-func (m *MockProductRepository) FindByID(productID uint) (*models.Product, error) {
-	args := m.Called(productID)
-	return args.Get(0).(*models.Product), args.Error(1)
+func (m *MockProductService) FindByID(id uint) (*response.ProductResponse, error) {
+	args := m.Called(id)
+	return args.Get(0).(*response.ProductResponse), args.Error(1)
 }
 
-func TestListProducts_Success(t *testing.T) {
-	mockRepo := new(MockProductRepository)
-	productHandler := NewProductHandler(mockRepo)
-
-	products := []models.Product{
-		{ID: 123, Name: "Product 1", Price: 100},
-		{ID: 456, Name: "Product 2", Price: 200},
+func TestListProducts(t *testing.T) {
+	tests := []struct {
+		name           string
+		mockRes        *response.ProductsResponse
+		mockErr        error
+		expectedStatus int
+	}{
+		{
+			name:           "successful request",
+			mockRes:        &response.ProductsResponse{Products: []response.Product{{ID: "1"}}},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "error response",
+			mockErr:        errors.New("some error"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "products not found",
+			mockErr:        constants.ErrProductNotFound,
+			expectedStatus: http.StatusNotFound,
+		},
 	}
-	mockRepo.On("FindAll").Return(products, nil)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/product", nil)
+			w := httptest.NewRecorder()
 
-	req := httptest.NewRequest(http.MethodGet, "/products", nil)
-	w := httptest.NewRecorder()
+			mockService := new(MockProductService)
+			handler := NewProductHandler(mockService)
+			mockService.On("FindAll").Return(tt.mockRes, tt.mockErr)
+			handler.ListProducts(w, req)
 
-	productHandler.ListProducts(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var fetchedProducts []models.Product
-	err := json.NewDecoder(resp.Body).Decode(&fetchedProducts)
-	assert.NoError(t, err)
-	assert.Equal(t, products, fetchedProducts)
+			resp := w.Result()
+			if resp.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+		})
+	}
 }
 
-func TestListProducts_Failure(t *testing.T) {
-	mockRepo := new(MockProductRepository)
-	productHandler := NewProductHandler(mockRepo)
+func TestGetProductByID(t *testing.T) {
+	tests := []struct {
+		name           string
+		id             uint
+		mockRes        *response.ProductResponse
+		mockErr        error
+		expectedStatus int
+	}{
+		{
+			name:           "successful request",
+			id:             uint(1),
+			mockRes:        &response.ProductResponse{ID: "1"},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "request with invalid product id",
+			id:             uint(0),
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "error finding product",
+			id:             uint(1),
+			mockErr:        errors.New("some error"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+		{
+			name:           "product not found",
+			id:             uint(1),
+			mockErr:        constants.ErrProductNotFound,
+			expectedStatus: http.StatusNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rctx := chi.NewRouteContext()
+			rctx.URLParams.Add("productID", strconv.Itoa(int(tt.id)))
+			req := httptest.NewRequest(http.MethodGet, "/product/"+strconv.Itoa(int(tt.id)), nil)
+			req = req.WithContext(context.WithValue(context.Background(), chi.RouteCtxKey, rctx))
+			w := httptest.NewRecorder()
 
-	mockRepo.On("FindAll").Return([]models.Product{}, assert.AnError)
+			mockService := new(MockProductService)
+			mockService.On("FindByID", tt.id).Return(tt.mockRes, tt.mockErr)
 
-	req := httptest.NewRequest(http.MethodGet, "/products", nil)
-	w := httptest.NewRecorder()
+			handler := NewProductHandler(mockService)
+			handler.GetProductByID(w, req)
 
-	productHandler.ListProducts(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-}
-
-func TestGetProductByID_Success(t *testing.T) {
-	mockRepo := new(MockProductRepository)
-	productHandler := NewProductHandler(mockRepo)
-
-	product := &models.Product{ID: 123, Name: "Product 1", Price: 100}
-	mockRepo.On("FindByID", uint(123)).Return(product, nil)
-
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("productID", "123")
-	req := httptest.NewRequest(http.MethodGet, "/products/123", nil)
-	req = req.WithContext(context.WithValue(context.Background(), chi.RouteCtxKey, rctx))
-	w := httptest.NewRecorder()
-
-	productHandler.GetProductByID(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-
-	var fetchedProduct models.Product
-	err := json.NewDecoder(resp.Body).Decode(&fetchedProduct)
-	assert.NoError(t, err)
-	assert.Equal(t, product, &fetchedProduct)
-}
-
-func TestGetProductByID_NotFound(t *testing.T) {
-	mockRepo := new(MockProductRepository)
-	productHandler := NewProductHandler(mockRepo)
-
-	mockRepo.On("FindByID", uint(123)).Return(&models.Product{}, constants.ErrProductNotFound)
-
-	req := httptest.NewRequest(http.MethodGet, "/products/123", nil)
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("productID", "123")
-	req = req.WithContext(context.WithValue(context.Background(), chi.RouteCtxKey, rctx))
-	w := httptest.NewRecorder()
-
-	productHandler.GetProductByID(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-}
-
-func TestGetProductByID_InvalidID(t *testing.T) {
-	mockRepo := new(MockProductRepository)
-	productHandler := NewProductHandler(mockRepo)
-
-	req := httptest.NewRequest(http.MethodGet, "/products/", nil)
-	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add("productID", "")
-	req = req.WithContext(context.WithValue(context.Background(), chi.RouteCtxKey, rctx))
-	w := httptest.NewRecorder()
-
-	productHandler.GetProductByID(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+			resp := w.Result()
+			if resp.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+		})
+	}
 }

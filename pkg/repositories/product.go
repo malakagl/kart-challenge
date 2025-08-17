@@ -28,7 +28,11 @@ func (r *ProductRepo) FindByID(id uint) (*db.Product, error) {
 	var product db.Product
 	if err := r.db.Preload("Image").First(&product, "id = ?", id).Error; err != nil {
 		log.Error().Msgf("Error fetching product with ID %d: %v", id, err)
-		return nil, constants.ErrProductNotFound
+		if err.Error() == "record not found" {
+			return nil, constants.ErrProductNotFound
+		}
+
+		return nil, constants.ErrDatabaseError
 	}
 
 	return &product, nil

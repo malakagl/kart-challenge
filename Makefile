@@ -1,6 +1,6 @@
 .PHONY: all tidy fmt run test
 
-all: tidy fmt test
+all: tidy fmt lint test
 
 tidy:
 	go mod tidy
@@ -32,11 +32,15 @@ docker-stop:
 	docker compose down kart-challenge
 	docker compose down postgres
 
+lint:
+	golangci-lint run ./...
+
 help:
 	@echo "Available commands:"
 	@echo "  make all          - Run tidy, fmt, and test"
 	@echo "  make tidy         - Tidy go modules"
 	@echo "  make fmt          - Format Go code"
+	@echo "  make lint         - Lint Go code"
 	@echo "  make run          - Run the application with local config"
 	@echo "  make test         - Run tests"
 	@echo "  make start-dep    - Start PostgreSQL dependency"

@@ -37,6 +37,13 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 
 # remove migrations
 migrate -path db/migrations -database "postgres://user:password@localhost:5432/test?sslmode=disable" down
+
+# install lint
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8 <- fixed with latest version
+
+# check coverage
+go test ./... -coverprofile=coverage.out
+go tool cover -func=coverage.out
 ```
 
 ### Notes
@@ -67,3 +74,4 @@ migrate -path db/migrations -database "postgres://user:password@localhost:5432/t
 - [ ] Implement the monitoring
 - [ ] Implement the tracing
 - [ ] Create private schema for postgres
+- [x] Add lint

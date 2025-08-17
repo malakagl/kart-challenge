@@ -3,6 +3,8 @@ package response
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
 type APIResponse struct {
@@ -15,7 +17,14 @@ type APIResponse struct {
 func JSON(w http.ResponseWriter, code int, resp APIResponse) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Error().Msgf("error while encoding response: %v", err)
+		_ = json.NewEncoder(w).Encode(APIResponse{
+			Code:    http.StatusInternalServerError,
+			Type:    "error",
+			Message: "error encoding response",
+		})
+	}
 }
 
 func Error(w http.ResponseWriter, code int, errType, message string) {

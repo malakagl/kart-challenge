@@ -7,4 +7,5 @@ var (
 	ErrInvalidCouponCode   = errors.New("invalid coupon code")
 	ErrInvalidProductID    = errors.New("invalid product ID")
 	ErrInternalServerError = errors.New("internal server error")
+	ErrDatabaseError       = errors.New("database query returned error")
 )

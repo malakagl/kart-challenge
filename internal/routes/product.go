@@ -11,7 +11,7 @@ import (
 func AddProductRoutes(r *chi.Mux, db *gorm.DB) {
 	productRepo := repositories.NewProductRepo(db)
 	productService := services.NewProductService(productRepo)
-	productHandler := handlers.NewProductHandler(productService)
+	productHandler := handlers.NewProductHandler(&productService)
 	r.Get("/product", productHandler.ListProducts)
 	r.Get("/product/{productID}", productHandler.GetProductByID)
 }

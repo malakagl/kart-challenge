@@ -3,206 +3,100 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/malakagl/kart-challenge/pkg/constants"
-	"github.com/stretchr/testify/assert"
+	"github.com/malakagl/kart-challenge/pkg/models/dto/request"
+	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 	"github.com/stretchr/testify/mock"
 )
 
+// MockOrderService implements OrderService for testing
 type MockOrderService struct {
 	mock.Mock
 }
 
-func (m *MockOrderService) Create(order models.Order) (string, error) {
-	args := m.Called(order)
-	return args.String(0), args.Error(1)
-}
-
-type MockProductService struct {
-	mock.Mock
-}
-
-func (m *MockProductService) FindByID(productID uint) (*models.Product, error) {
-	args := m.Called(productID)
-	return args.Get(0).(*models.Product), args.Error(1)
-}
-
-func (m *MockProductService) FindAll() ([]models.Product, error) {
+func (m *MockOrderService) Create(_ *request.OrderRequest) (*response.OrderResponse, error) {
 	args := m.Called()
-	return args.Get(0).([]models.Product), args.Error(1)
+	return args.Get(0).(*response.OrderResponse), args.Error(1)
 }
 
-type MockCouponValidator struct {
-	mock.Mock
-}
-
-func (m *MockCouponValidator) ValidateCouponCode(code string) bool {
-	args := m.Called(code)
-	return args.Bool(0)
-}
-
-func TestCreateOrder_Success(t *testing.T) {
-	mockOrderService := new(MockOrderService)
-	mockProductService := new(MockProductService)
-	mockCouponValidator := new(MockCouponValidator)
-
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
-
-	orderReq := models.OrderRequest{
-		Items: []models.OrderProduct{
-			{ProductID: "123", Quantity: 2},
+func TestCreateOrder(t *testing.T) {
+	tests := []struct {
+		name           string
+		body           interface{}
+		mockRes        *response.OrderResponse
+		mockErr        error
+		expectedStatus int
+	}{
+		{
+			name: "successful order",
+			body: request.OrderRequest{
+				CouponCode: "HAPPYHRS",
+				Items:      []request.Item{{ProductID: "1", Quantity: 2}},
+			},
+			mockRes:        &response.OrderResponse{ID: "1234", Total: 100.0},
+			expectedStatus: http.StatusOK,
 		},
-		CouponCode: "FIFTYOFF",
-	}
-
-	product := &models.Product{ID: 123, Name: "Test Product", Price: 100}
-	mockProductService.On("FindByID", uint(123)).Return(product, nil)
-	mockOrderService.On("Create", mock.Anything).Return("order123", nil)
-	mockCouponValidator.On("ValidateCouponCode", "FIFTYOFF").Return(true)
-
-	body, _ := json.Marshal(orderReq)
-	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	orderHandler.CreateOrder(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusCreated, resp.StatusCode)
-
-	var orderResp models.OrderResponse
-	err := json.NewDecoder(resp.Body).Decode(&orderResp)
-	assert.NoError(t, err)
-	assert.Equal(t, "order123", orderResp.ID)
-	assert.Equal(t, []*models.Product{product}, orderResp.Products)
-}
-
-func TestCreateOrder_InvalidRequestBody(t *testing.T) {
-	mockOrderService := new(MockOrderService)
-	mockProductService := new(MockProductService)
-
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService, nil)
-
-	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer([]byte("invalid json")))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	orderHandler.CreateOrder(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-}
-
-func TestCreateOrder_InvalidCouponCode(t *testing.T) {
-	mockOrderService := new(MockOrderService)
-	mockProductService := new(MockProductService)
-	mockCouponValidator := new(MockCouponValidator)
-
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
-
-	orderReq := models.OrderRequest{
-		Items: []models.OrderProduct{
-			{ProductID: "123", Quantity: 2},
+		{
+			name:           "invalid JSON",
+			body:           "{invalid-json}",
+			expectedStatus: http.StatusBadRequest,
 		},
-		CouponCode: "INVALIDCODE",
-	}
-
-	product := &models.Product{ID: 123, Name: "Test Product", Price: 100}
-	mockProductService.On("FindByID", 123).Return(product, nil)
-	mockOrderService.On("Create", mock.Anything).Return("order123", nil)
-	mockCouponValidator.On("ValidateCouponCode", "INVALIDCODE").Return(false)
-
-	body, _ := json.Marshal(orderReq)
-	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	orderHandler.CreateOrder(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
-}
-
-func TestCreateOrder_InvalidProductID(t *testing.T) {
-	mockOrderService := new(MockOrderService)
-	mockProductService := new(MockProductService)
-	mockCouponValidator := new(MockCouponValidator)
-	mockCouponValidator.On("ValidateCouponCode", "VALIDCODE").Return(true)
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
-
-	orderReq := models.OrderRequest{
-		CouponCode: "VALIDCODE",
-		Items: []models.OrderProduct{
-			{ProductID: "", Quantity: 2},
+		{
+			name: "invalid coupon code",
+			body: request.OrderRequest{
+				CouponCode: "WRONGCODE",
+				Items:      []request.Item{{ProductID: "1", Quantity: 2}},
+			},
+			mockErr:        constants.ErrInvalidCouponCode,
+			expectedStatus: http.StatusUnprocessableEntity,
+		},
+		{
+			name: "invalid item count",
+			body: request.OrderRequest{
+				CouponCode: "TESTCODE",
+				Items:      []request.Item{{ProductID: "1", Quantity: 0}},
+			},
+			mockErr:        constants.ErrInvalidCouponCode,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name: "service error",
+			body: request.OrderRequest{
+				CouponCode: "HAPPYHRS",
+				Items:      []request.Item{{ProductID: "1", Quantity: 2}},
+			},
+			mockErr:        errors.New("db error"),
+			expectedStatus: http.StatusInternalServerError,
 		},
 	}
 
-	body, _ := json.Marshal(orderReq)
-	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var bodyBytes []byte
+			switch v := tt.body.(type) {
+			case string:
+				bodyBytes = []byte(v)
+			default:
+				bodyBytes, _ = json.Marshal(v)
+			}
 
-	orderHandler.CreateOrder(w, req)
+			req := httptest.NewRequest(http.MethodPost, "/order", bytes.NewReader(bodyBytes))
+			w := httptest.NewRecorder()
 
-	resp := w.Result()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-}
+			mockService := new(MockOrderService)
+			handler := NewOrderHandler(mockService)
+			mockService.On("Create", mock.Anything).Return(tt.mockRes, tt.mockErr)
+			handler.CreateOrder(w, req)
 
-func TestCreateOrder_ProductNotFound(t *testing.T) {
-	mockOrderService := new(MockOrderService)
-	mockProductService := new(MockProductService)
-	mockCouponValidator := new(MockCouponValidator)
-	mockCouponValidator.On("ValidateCouponCode", "VALIDCODE").Return(true)
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
-
-	orderReq := models.OrderRequest{
-		CouponCode: "VALIDCODE",
-		Items: []models.OrderProduct{
-			{ProductID: "123", Quantity: 2},
-		},
+			resp := w.Result()
+			if resp.StatusCode != tt.expectedStatus {
+				t.Errorf("expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
+			}
+		})
 	}
-
-	mockProductService.On("FindByID", uint(123)).Return(&models.Product{}, constants.ErrProductNotFound)
-
-	body, _ := json.Marshal(orderReq)
-	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	orderHandler.CreateOrder(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-}
-
-func TestCreateOrder_FailedToCreateOrder(t *testing.T) {
-	mockOrderService := new(MockOrderService)
-	mockProductService := new(MockProductService)
-	mockCouponValidator := new(MockCouponValidator)
-	mockCouponValidator.On("ValidateCouponCode", "VALIDCODE").Return(true)
-	orderHandler := NewOrderHandler(mockOrderService, mockProductService, mockCouponValidator)
-
-	orderReq := models.OrderRequest{
-		CouponCode: "VALIDCODE",
-		Items: []models.OrderProduct{
-			{ProductID: "123", Quantity: 2},
-		},
-	}
-
-	product := &models.Product{ID: 123, Name: "Test Product", Price: 100}
-	mockProductService.On("FindByID", uint(123)).Return(product, nil)
-	mockOrderService.On("Create", mock.Anything).Return("", assert.AnError)
-
-	body, _ := json.Marshal(orderReq)
-	req := httptest.NewRequest(http.MethodPost, "/orders", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-
-	orderHandler.CreateOrder(w, req)
-
-	resp := w.Result()
-	assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 }

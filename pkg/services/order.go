@@ -10,6 +10,10 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/util"
 )
 
+type IOrderService interface {
+	Create(req *request.OrderRequest) (*response.OrderResponse, error)
+}
+
 type OrderService struct {
 	orderRepo      repositories.OrderRepo
 	couponCodeRepo repositories.CouponCodeRepo
@@ -28,21 +32,27 @@ func NewOrderService(
 	}
 }
 
-func (o *OrderService) isCouponCodeValid(code string) bool {
+func (o *OrderService) isCouponCodeValid(code string) (bool, error) {
 	if len(code) < 8 || len(code) > 10 {
-		return false
+		return false, nil
 	}
 
-	if o.couponCodeRepo.CountFilesByCode(code) > 1 {
+	count, err := o.couponCodeRepo.CountFilesByCode(code)
+	if count > 1 {
 		log.Error().Msgf("Coupon code %s is valid: found in multiple files", code)
-		return true
+		return true, nil
 	}
 
-	return false
+	return false, err
 }
 
 func (o *OrderService) Create(req *request.OrderRequest) (*response.OrderResponse, error) {
-	if !o.isCouponCodeValid(req.CouponCode) { // !h.couponValidator.ValidateCouponCode(orderReq.CouponCode)
+	couponCodeIsValid, err := o.isCouponCodeValid(req.CouponCode)
+	if err != nil {
+		return nil, err
+	}
+
+	if !couponCodeIsValid { // !h.couponValidator.ValidateCouponCode(orderReq.CouponCode)
 		log.Error().Msgf("Invalid coupon code: %s", req.CouponCode)
 		return nil, constants.ErrInvalidCouponCode
 	}
@@ -89,7 +99,7 @@ func (o *OrderService) Create(req *request.OrderRequest) (*response.OrderRespons
 	}
 	order.Products = orderProducts
 
-	err := o.orderRepo.Create(&order)
+	err = o.orderRepo.Create(&order)
 	if err != nil {
 		log.Error().Msgf("Error creating order: %v", err)
 		return nil, constants.ErrInternalServerError

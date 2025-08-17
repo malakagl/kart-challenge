@@ -13,7 +13,7 @@ func AddOrderRoutes(r *chi.Mux, db *gorm.DB) {
 	orderRepo := repositories.NewOrderRepo(db)
 	couponCodeRepo := repositories.NewCouponCodeRepository(db)
 	orderService := services.NewOrderService(orderRepo, couponCodeRepo, productRepo)
-	orderHandler := handlers.NewOrderHandler(orderService)
+	orderHandler := handlers.NewOrderHandler(&orderService)
 
-	r.Post("/orders", orderHandler.CreateOrder)
+	r.Post("/order", orderHandler.CreateOrder)
 }

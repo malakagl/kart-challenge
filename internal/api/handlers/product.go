@@ -13,10 +13,10 @@ import (
 )
 
 type ProductHandler struct {
-	service services.ProductService
+	service services.IProductService
 }
 
-func NewProductHandler(s services.ProductService) *ProductHandler {
+func NewProductHandler(s services.IProductService) *ProductHandler {
 	return &ProductHandler{service: s}
 }
 
@@ -54,12 +54,6 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 		}
 
 		response.Error(w, http.StatusInternalServerError, "Error fetching products", "Error fetching products")
-		return
-	}
-
-	if product == nil {
-		log.Warn().Msgf("Product not found for ID: %d", productId)
-		response.Error(w, http.StatusNotFound, "No products found", "No products found in the database")
 		return
 	}
 

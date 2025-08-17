@@ -9,6 +9,11 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/repositories"
 )
 
+type IProductService interface {
+	FindAll() (*response.ProductsResponse, error)
+	FindByID(id uint) (*response.ProductResponse, error)
+}
+
 type ProductService struct {
 	repo repositories.ProductRepo
 }
