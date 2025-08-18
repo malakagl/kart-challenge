@@ -1,0 +1,7 @@
+resources:
+  - namespace/namespace.yaml
+  - postgres/pvc.yaml
+  - postgres/deployment.yaml
+  - postgres/service.yaml
+  - kart-challenge/deployment.yaml
+  - kart-challenge/service.yaml

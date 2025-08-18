@@ -19,6 +19,6 @@ logging:
 couponCode:
   unzipped: true
   filePaths:
-    - ./promocodes/couponbase1.txt
-    - ./promocodes/couponbase2.txt
-    - ./promocodes/couponbase3.txt
+    - /mnt/promocodes/couponbase1.gz
+    - /mnt/promocodes/couponbase2.gz
+    - /mnt/promocodes/couponbase3.gz

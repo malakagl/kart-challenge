@@ -15,13 +15,17 @@ import (
 
 type OrderHandler struct {
 	orderService services.IOrderService
+	validator    *validator.Validate
 }
 
 func NewOrderHandler(o services.IOrderService) *OrderHandler {
-	return &OrderHandler{orderService: o}
+	return &OrderHandler{
+		orderService: o,
+		validator:    validator.New(),
+	}
 }
 
-func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
+func (o *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 	var orderReq request.OrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&orderReq); err != nil {
 		log.Error().Msgf("Error decoding request body: %v", err)
@@ -29,13 +33,13 @@ func (h *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validator.New().Struct(orderReq); err != nil {
+	if err := o.validator.Struct(orderReq); err != nil {
 		log.Error().Msgf("Validation error: %v", err)
 		response.Error(w, http.StatusBadRequest, "Invalid request data", err.Error())
 		return
 	}
 
-	orderRes, err := h.orderService.Create(&orderReq)
+	orderRes, err := o.orderService.Create(&orderReq)
 	if err != nil {
 		log.Error().Msgf("Error creating order: %v", err)
 		if errors.Is(err, constants.ErrInvalidCouponCode) {

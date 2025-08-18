@@ -49,13 +49,19 @@ go tool cover -func=coverage.out
 minikube start --memory 10240 --cpus 4
 docker build -f ./docker/Dockerfile -t kart-challenge:latest .
 minikube image load kart-challenge:latest
-kubectl apply -f deployment/deployment.yaml
+
+# mount config and data
+minikube mount ./config:/mnt/config
+minikube mount ./promocodes:/mnt/promocodes
+kubectl apply -k ./deployment/k8s/
 
 # verify
 kubectl get deployments -A
 minikube service kart-challenge --url -n kart-challenge
+minikube service kart-challenge --url -n postgres
 kubectl get pods -n kart-challenge
-kubectl logs kart-challenge-5d8ccdfcdd-qh8cb -n kart-challenge
+kubectl logs kart-challenge-5d8ccdfcdd-qh8cb -n kart-challenge -f
+kubectl exec -it -n kart-challenge kart-challenge-6d69f6b49-hn5fb -- /bin/sh
 
 # clean up
 kubectl delete service kart-challenge -n kart-challenge

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kart-challenge
+  namespace: kart-challenge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kart-challenge
+  template:
+    metadata:
+      labels:
+        app: kart-challenge
+    spec:
+      containers:
+        - name: kart-challenge
+          imagePullPolicy: Never
+          image: kart-challenge:latest
+          env:
+            - name: ENVIRONMENT
+              value: "k8s"
+          command:
+            - "sh"
+            - "-c"
+            - |
+              sleep 60 && \
+              ./kart-challenge --config ./config/config.$ENVIRONMENT.yaml
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /app/config
+              name: local-config
+            - mountPath: /mnt/promocodes
+              name: promo-codes
+      volumes:
+        - name: local-config
+          hostPath:
+            path: /mnt/config
+            type: Directory
+        - name: promo-codes
+          hostPath:
+            path: /mnt/promocodes
+            type: Directory
