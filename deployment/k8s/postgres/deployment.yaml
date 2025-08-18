@@ -27,6 +27,13 @@ spec:
               value: "test"
           ports:
             - containerPort: 5432
+          resources:
+            requests: # Minimum resources guaranteed
+              cpu: "500m"      # 0.5 vCPU
+              memory: "512Mi"  # 512MB RAM
+            limits: # Maximum resources allowed
+              cpu: "1"         # 1 vCPU
+              memory: "1Gi"    # 1GB RAM
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgres-storage

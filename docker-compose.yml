@@ -28,6 +28,8 @@ services:
     entrypoint: ["./kart-challenge", "--config", "./config/config.docker.yaml"]
     networks:
       - kart-challenge-network
+    volumes:
+      - ./promocodes:/app/promocodes
 
 networks:
     kart-challenge-network:

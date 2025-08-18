@@ -1,8 +1,10 @@
 package services
 
 import (
+	"context"
+
 	"github.com/malakagl/kart-challenge/internal/couponcode"
-	"github.com/malakagl/kart-challenge/pkg/constants"
+	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
 	"github.com/malakagl/kart-challenge/pkg/models/db"
 	"github.com/malakagl/kart-challenge/pkg/models/dto/request"
@@ -12,7 +14,7 @@ import (
 )
 
 type IOrderService interface {
-	Create(req *request.OrderRequest) (*response.OrderResponse, error)
+	Create(ctx context.Context, req *request.OrderRequest) (*response.OrderResponse, error)
 }
 
 type OrderService struct {
@@ -33,33 +35,33 @@ func NewOrderService(
 	}
 }
 
-func (o *OrderService) isCouponCodeValid(code string) (bool, error) {
+func (o *OrderService) isCouponCodeValid(ctx context.Context, code string) (bool, error) {
 	if len(code) < 8 || len(code) > 10 {
 		return false, nil
 	}
 
-	if couponcode.ValidateCouponCode(code) {
+	if couponcode.ValidateCouponCode(ctx, code) {
 		return true, nil
 	}
 	// use database
-	// count, err := o.couponCodeRepo.CountFilesByCode(code)
+	// count, errors := o.couponCodeRepo.CountFilesByCode(code)
 	// if count > 1 {
-	// 	log.Error().Msgf("Coupon code %s is valid: found in multiple files", code)
+	// 	log.WithCtx(ctx).Error().Msgf("Coupon code %s is valid: found in multiple files", code)
 	// 	return true, nil
 	// }
 
 	return false, nil
 }
 
-func (o *OrderService) Create(req *request.OrderRequest) (*response.OrderResponse, error) {
-	couponCodeIsValid, err := o.isCouponCodeValid(req.CouponCode)
+func (o *OrderService) Create(ctx context.Context, req *request.OrderRequest) (*response.OrderResponse, error) {
+	couponCodeIsValid, err := o.isCouponCodeValid(ctx, req.CouponCode)
 	if err != nil {
 		return nil, err
 	}
 
 	if !couponCodeIsValid { // !h.couponValidator.ValidateCouponCode(orderReq.CouponCode)
-		log.Error().Msgf("Invalid coupon code: %s", req.CouponCode)
-		return nil, constants.ErrInvalidCouponCode
+		log.WithCtx(ctx).Error().Msgf("Invalid coupon code: %s", req.CouponCode)
+		return nil, errors.ErrInvalidCouponCode
 	}
 
 	order := db.Order{}
@@ -69,18 +71,18 @@ func (o *OrderService) Create(req *request.OrderRequest) (*response.OrderRespons
 	for i, item := range req.Items {
 		productId, err := util.StringToUint(item.ProductID)
 		if err != nil || productId == 0 {
-			log.Error().Msg("Invalid product ID in order request")
-			return nil, constants.ErrInvalidProductID
+			log.WithCtx(ctx).Error().Msg("Invalid product ID in order request")
+			return nil, errors.ErrInvalidProductID
 		}
 
-		product, err := o.productRepo.FindByID(productId)
+		product, err := o.productRepo.FindByID(ctx, productId)
 		if err != nil && err.Error() == "not found" {
-			log.Error().Msgf("Error fetching product: %v", err)
-			return nil, constants.ErrProductNotFound
+			log.WithCtx(ctx).Error().Msgf("Error fetching product: %v", err)
+			return nil, errors.ErrProductNotFound
 		}
 		if err != nil {
-			log.Error().Msgf("Error fetching product: %v", err)
-			return nil, constants.ErrInternalServerError
+			log.WithCtx(ctx).Error().Msgf("Error fetching product: %v", err)
+			return nil, errors.ErrInternalServerError
 		}
 
 		orderProducts[i] = &db.OrderProduct{ProductID: item.ProductID, Quantity: item.Quantity}
@@ -104,10 +106,10 @@ func (o *OrderService) Create(req *request.OrderRequest) (*response.OrderRespons
 	}
 	order.Products = orderProducts
 
-	err = o.orderRepo.Create(&order)
+	err = o.orderRepo.Create(ctx, &order)
 	if err != nil {
-		log.Error().Msgf("Error creating order: %v", err)
-		return nil, constants.ErrInternalServerError
+		log.WithCtx(ctx).Error().Msgf("Error creating order: %v", err)
+		return nil, errors.ErrInternalServerError
 	}
 
 	return &response.OrderResponse{

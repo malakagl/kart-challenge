@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"sync"
 
@@ -13,9 +14,9 @@ import (
 var dbInstance *gorm.DB
 var mu sync.Mutex
 
-func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
+func Connect(ctx context.Context, cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	if dbInstance != nil {
-		log.Debug().Msg("Reusing existing GORM database connection")
+		log.WithCtx(ctx).Debug().Msg("Reusing existing GORM database connection")
 		return dbInstance, nil
 	}
 
@@ -37,7 +38,7 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	log.Debug().Msg("Connected to PostgreSQL via GORM")
+	log.WithCtx(ctx).Debug().Msg("Connected to PostgreSQL via GORM")
 
 	// Ensure singleton
 	mu.Lock()
@@ -45,7 +46,7 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 	if dbInstance == nil {
 		dbInstance = db
 	} else {
-		log.Debug().Msg("Reusing existing GORM database connection")
+		log.WithCtx(ctx).Debug().Msg("Reusing existing GORM database connection")
 	}
 
 	return dbInstance, nil

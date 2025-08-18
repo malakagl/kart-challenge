@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/malakagl/kart-challenge/internal/middleware"
 	"github.com/malakagl/kart-challenge/internal/routes"
 	"github.com/malakagl/kart-challenge/pkg/log"
-	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 )
 
 func Start(cfg *config.Config) error {
@@ -21,18 +21,15 @@ func Start(cfg *config.Config) error {
 	}
 
 	couponcode.SetCouponCodeFiles(cfg.CouponCode.FilePaths)
-	db, err := database.Connect(&cfg.Database)
+	db, err := database.Connect(context.Background(), &cfg.Database)
 	if err != nil {
 		log.Error().Msgf("failed to connect to database: %v", err)
 		return err
 	}
 
 	r := chi.NewRouter()
-	r.Use(middleware.AuthenticationMiddleware, middleware.LoggingMiddleware)
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		response.Success(w, "ok")
-	})
-
+	r.Use(middleware.TraceMiddleware, middleware.AuthenticationMiddleware, middleware.LoggingMiddleware)
+	routes.AddHealthCheckRoutes(r)
 	routes.AddProductRoutes(r, db)
 	routes.AddOrderRoutes(r, db)
 

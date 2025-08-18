@@ -1,11 +1,13 @@
 package log
 
 import (
+	"context"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/malakagl/kart-challenge/internal/config"
+	"github.com/malakagl/kart-challenge/pkg/constants"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -24,19 +26,32 @@ func Init(serviceName string, cfg config.LoggingConfig) {
 	}
 
 	var output zerolog.Logger
-	if !cfg.JsonFormat {
-		output = zerolog.New(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339})
-	} else {
+	if cfg.JsonFormat {
 		output = zerolog.New(os.Stderr)
+	} else {
+		output = zerolog.New(zerolog.ConsoleWriter{
+			Out:        os.Stderr,
+			TimeFormat: time.RFC3339,
+		})
 	}
 
-	Logger = output.With().
+	Logger = output.Level(level).
+		With().
 		Timestamp().
 		Str("service", serviceName).
-		Logger().
-		Level(level)
+		Logger()
 
 	log.Logger = Logger
+}
+
+func WithCtx(ctx context.Context) *zerolog.Logger {
+	traceID := ctx.Value(constants.TraceIDKey)
+	if traceID == nil {
+		return &Logger
+	}
+
+	l := Logger.With().Str("traceId", traceID.(string)).Logger()
+	return &l
 }
 
 func Info() *zerolog.Event {
@@ -53,12 +68,4 @@ func Warn() *zerolog.Event {
 
 func Error() *zerolog.Event {
 	return Logger.Error()
-}
-
-func Fatal() *zerolog.Event {
-	return Logger.Fatal()
-}
-
-func Panic() *zerolog.Event {
-	return Logger.Panic()
 }

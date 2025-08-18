@@ -2,13 +2,14 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/malakagl/kart-challenge/pkg/constants"
+	errors2 "github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/models/dto/request"
 	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 	"github.com/stretchr/testify/mock"
@@ -19,7 +20,7 @@ type MockOrderService struct {
 	mock.Mock
 }
 
-func (m *MockOrderService) Create(_ *request.OrderRequest) (*response.OrderResponse, error) {
+func (m *MockOrderService) Create(_ context.Context, _ *request.OrderRequest) (*response.OrderResponse, error) {
 	args := m.Called()
 	return args.Get(0).(*response.OrderResponse), args.Error(1)
 }
@@ -52,7 +53,7 @@ func TestCreateOrder(t *testing.T) {
 				CouponCode: "WRONGCODE",
 				Items:      []request.Item{{ProductID: "1", Quantity: 2}},
 			},
-			mockErr:        constants.ErrInvalidCouponCode,
+			mockErr:        errors2.ErrInvalidCouponCode,
 			expectedStatus: http.StatusUnprocessableEntity,
 		},
 		{
@@ -61,7 +62,7 @@ func TestCreateOrder(t *testing.T) {
 				CouponCode: "TESTCODE",
 				Items:      []request.Item{{ProductID: "1", Quantity: 0}},
 			},
-			mockErr:        constants.ErrInvalidCouponCode,
+			mockErr:        errors2.ErrInvalidCouponCode,
 			expectedStatus: http.StatusBadRequest,
 		},
 		{

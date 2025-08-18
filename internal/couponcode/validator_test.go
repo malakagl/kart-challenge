@@ -61,22 +61,22 @@ func TestValidateCouponCode_PlainText(t *testing.T) {
 	couponcode.SetCouponCodeFiles([]string{file1, file2, file3})
 
 	// code present in 2 files → should return true
-	if !couponcode.ValidateCouponCode("ABC12345") {
+	if !couponcode.ValidateCouponCode(t.Context(), "ABC12345") {
 		t.Error("Expected true, got false")
 	}
 
 	// code present in 1 file → should return false
-	if couponcode.ValidateCouponCode("QWE22222") {
+	if couponcode.ValidateCouponCode(t.Context(), "QWE22222") {
 		t.Error("Expected false, got true")
 	}
 
 	// code not present → should return false
-	if couponcode.ValidateCouponCode("NOTFOUND") {
+	if couponcode.ValidateCouponCode(t.Context(), "NOTFOUND") {
 		t.Error("Expected false, got true")
 	}
 
 	// code too short → should return false
-	if couponcode.ValidateCouponCode("SHORT") {
+	if couponcode.ValidateCouponCode(t.Context(), "SHORT") {
 		t.Error("Expected false for short code")
 	}
 }
@@ -91,12 +91,12 @@ func TestValidateCouponCode_GzipFiles(t *testing.T) {
 	couponcode.SetCouponCodeFiles([]string{file1, file2})
 
 	// code present in 2 files → should return true
-	if !couponcode.ValidateCouponCode("ABC12345") {
+	if !couponcode.ValidateCouponCode(t.Context(), "ABC12345") {
 		t.Error("Expected true, got false")
 	}
 
 	// code present in 1 file → should return false
-	if couponcode.ValidateCouponCode("LMN11111") {
+	if couponcode.ValidateCouponCode(t.Context(), "LMN11111") {
 		t.Error("Expected false, got true")
 	}
 }
@@ -111,12 +111,12 @@ func TestValidateCouponCode_MixedFiles(t *testing.T) {
 	couponcode.SetCouponCodeFiles([]string{file1, file2})
 
 	// code present in both → should return true
-	if !couponcode.ValidateCouponCode("ABC12345") {
+	if !couponcode.ValidateCouponCode(t.Context(), "ABC12345") {
 		t.Error("Expected true, got false")
 	}
 
 	// code present in only one → should return false
-	if couponcode.ValidateCouponCode("LMN11111") {
+	if couponcode.ValidateCouponCode(t.Context(), "LMN11111") {
 		t.Error("Expected false, got true")
 	}
 }

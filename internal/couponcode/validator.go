@@ -61,22 +61,21 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	}
 }
 
-func ValidateCouponCode(code string) bool {
-	log.Debug().Msgf("validating coupon code %s", code)
+func ValidateCouponCode(ctx context.Context, code string) bool {
+	log.WithCtx(ctx).Debug().Msgf("validating coupon code %s", code)
 	defer func(start time.Time) {
-		log.Debug().Msgf("validated coupon code in %s", time.Since(start).String())
+		log.WithCtx(ctx).Debug().Msgf("validated coupon code in %s", time.Since(start).String())
 	}(time.Now())
 
 	if len(code) < 8 || len(code) > 10 {
 		return false
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	var wg sync.WaitGroup
 	var count atomic.Int32
-
 	for _, f := range couponCodeFiles {
 		wg.Add(1)
 		go worker(ctx, f, code, &count, &wg, cancel)

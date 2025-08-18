@@ -1,17 +1,18 @@
 package services
 
 import (
+	"context"
 	"strconv"
 
-	"github.com/malakagl/kart-challenge/pkg/constants"
+	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
 	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 	"github.com/malakagl/kart-challenge/pkg/repositories"
 )
 
 type IProductService interface {
-	FindAll() (*response.ProductsResponse, error)
-	FindByID(id uint) (*response.ProductResponse, error)
+	FindAll(ctx context.Context) (*response.ProductsResponse, error)
+	FindByID(ctx context.Context, id uint) (*response.ProductResponse, error)
 }
 
 type ProductService struct {
@@ -22,16 +23,16 @@ func NewProductService(r repositories.ProductRepo) ProductService {
 	return ProductService{repo: r}
 }
 
-func (s *ProductService) FindAll() (*response.ProductsResponse, error) {
-	res, err := s.repo.FindAll()
+func (s *ProductService) FindAll(ctx context.Context) (*response.ProductsResponse, error) {
+	res, err := s.repo.FindAll(ctx)
 	if err != nil {
-		log.Error().Msgf("findAll failed with error: %v", err)
-		return nil, constants.ErrProductNotFound
+		log.WithCtx(ctx).Error().Msgf("findAll failed with error: %v", err)
+		return nil, errors.ErrProductNotFound
 	}
 
 	if res == nil {
-		log.Error().Msg("findAll returned 0 elements")
-		return nil, constants.ErrProductNotFound
+		log.WithCtx(ctx).Error().Msg("findAll returned 0 elements")
+		return nil, errors.ErrProductNotFound
 	}
 
 	products := make([]response.Product, len(res))
@@ -53,16 +54,16 @@ func (s *ProductService) FindAll() (*response.ProductsResponse, error) {
 	return &response.ProductsResponse{Products: products}, nil
 }
 
-func (s *ProductService) FindByID(id uint) (*response.ProductResponse, error) {
-	res, err := s.repo.FindByID(id)
+func (s *ProductService) FindByID(ctx context.Context, id uint) (*response.ProductResponse, error) {
+	res, err := s.repo.FindByID(ctx, id)
 	if err != nil {
-		log.Error().Msgf("findAll failed with error: %v", err)
-		return nil, constants.ErrProductNotFound
+		log.WithCtx(ctx).Error().Msgf("findAll failed with error: %v", err)
+		return nil, errors.ErrProductNotFound
 	}
 
 	if res == nil {
-		log.Error().Msg("findAll returned 0 elements")
-		return nil, constants.ErrProductNotFound
+		log.WithCtx(ctx).Error().Msg("findAll returned 0 elements")
+		return nil, errors.ErrProductNotFound
 	}
 
 	return &response.ProductResponse{
