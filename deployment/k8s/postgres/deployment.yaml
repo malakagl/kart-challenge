@@ -20,9 +20,9 @@ spec:
             - name: ENVIRONMENT
               value: "k8s"
             - name: POSTGRES_USER
-              value: "user"
+              value: "postgres  "
             - name: POSTGRES_PASSWORD
-              value: "password"
+              value: "pw"
             - name: POSTGRES_DB
               value: "test"
           ports:
@@ -37,7 +37,13 @@ spec:
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgres-storage
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d/docker_postgres_init.sql
+              subPath: docker_postgres_init.sql
       volumes:
         - name: postgres-storage
           persistentVolumeClaim:
             claimName: postgres-pvc
+        - name: init-sql
+          configMap:
+            name: postgres-init

@@ -5,14 +5,15 @@ services:
     hostname: postgres
     restart: always
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: pw
       POSTGRES_DB: test
       ENVIRONMENT: docker
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data
+      - ./scripts/docker_postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
     networks:
       - kart-challenge-network
 
@@ -25,11 +26,13 @@ services:
       - postgres
     ports:
       - "8080:8080"
-    entrypoint: ["./kart-challenge", "--config", "./config/config.docker.yaml"]
+    entrypoint: ["./kart-challenge", "--config", "/mnt/config/config.docker.yaml"]
     networks:
       - kart-challenge-network
     volumes:
-      - ./promocodes:/app/promocodes
+      - ./promocodes:/mnt/promocodes
+      - ./db:/mnt/db
+      - ./config:/mnt/config
 
 networks:
     kart-challenge-network:

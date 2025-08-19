@@ -25,14 +25,16 @@ spec:
             - "-c"
             - |
               sleep 60 && \
-              ./kart-challenge --config ./config/config.$ENVIRONMENT.yaml
+              ./kart-challenge --config /mnt/config/config.$ENVIRONMENT.yaml
           ports:
             - containerPort: 8080
           volumeMounts:
-            - mountPath: /app/config
-              name: local-config
+            - mountPath: /mnt/config
+              name: config-volume
+            - mountPath: /mnt/db
+              name: db-migrations-volume
             - mountPath: /mnt/promocodes
-              name: promo-codes
+              name: promo-codes-volume
           resources:
             requests: # Minimum resources guaranteed
               cpu: "500m"      # 0.5 vCPU
@@ -41,11 +43,15 @@ spec:
               cpu: "1"         # 1 vCPU
               memory: "1Gi"    # 1GB RAM
       volumes:
-        - name: local-config
+        - name: config-volume
           hostPath:
             path: /mnt/config
             type: Directory
-        - name: promo-codes
+        - name: db-migrations-volume
+          hostPath:
+            path: /mnt/db
+            type: Directory
+        - name: promo-codes-volume
           hostPath:
             path: /mnt/promocodes
             type: Directory

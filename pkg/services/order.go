@@ -40,17 +40,15 @@ func (o *OrderService) isCouponCodeValid(ctx context.Context, code string) (bool
 		return false, nil
 	}
 
-	if couponcode.ValidateCouponCode(ctx, code) {
-		return true, nil
-	}
+	return couponcode.ValidateCouponCode(ctx, code)
 	// use database
 	// count, errors := o.couponCodeRepo.CountFilesByCode(code)
 	// if count > 1 {
 	// 	log.WithCtx(ctx).Error().Msgf("Coupon code %s is valid: found in multiple files", code)
 	// 	return true, nil
 	// }
-
-	return false, nil
+	//
+	// return false, nil
 }
 
 func (o *OrderService) Create(ctx context.Context, req *request.OrderRequest) (*response.OrderResponse, error) {

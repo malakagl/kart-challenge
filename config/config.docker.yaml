@@ -4,21 +4,22 @@ server:
 
 database:
   type: "postgres"
-  user: "user"
-  password: "password"
+  user: "test_user"
+  password: "test_password"
   host: "postgres"
   port: 5432
   name: "test"
   sslMode: "disable"
   debug: true
+  migrationsFolderPath: /mnt/db
 
 logging:
   level: debug
   jsonFormat: false
 
 couponCode:
-  unzipped: true
+  unzipped: false
   filePaths:
-    - ./promocodes/couponbase1.txt
-    - ./promocodes/couponbase2.txt
-    - ./promocodes/couponbase3.txt
+    - /mnt/promocodes/couponbase1.gz
+    - /mnt/promocodes/couponbase2.gz
+    - /mnt/promocodes/couponbase3.gz

@@ -12,6 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
@@ -55,20 +56,21 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 					cancel() // stop all other workers
 					return
 				}
+
 				return
 			}
 		}
 	}
 }
 
-func ValidateCouponCode(ctx context.Context, code string) bool {
+func ValidateCouponCode(ctx context.Context, code string) (bool, error) {
 	log.WithCtx(ctx).Debug().Msgf("validating coupon code %s", code)
 	defer func(start time.Time) {
 		log.WithCtx(ctx).Debug().Msgf("validated coupon code in %s", time.Since(start).String())
 	}(time.Now())
 
 	if len(code) < 8 || len(code) > 10 {
-		return false
+		return false, errors.ErrInvalidCouponCode
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -77,10 +79,15 @@ func ValidateCouponCode(ctx context.Context, code string) bool {
 	var wg sync.WaitGroup
 	var count atomic.Int32
 	for _, f := range couponCodeFiles {
+		log.WithCtx(ctx).Debug().Msgf("checking file %s", f)
 		wg.Add(1)
 		go worker(ctx, f, code, &count, &wg, cancel)
 	}
 
 	wg.Wait()
-	return count.Load() >= 2
+	if count.Load() >= 2 {
+		return true, nil
+	}
+
+	return false, errors.ErrInvalidCouponCode
 }

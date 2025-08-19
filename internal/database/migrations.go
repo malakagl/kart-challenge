@@ -17,9 +17,10 @@ func RunMigrations(cfg config.DatabaseConfig) error {
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode,
 	)
 	log.Debug().Msgf("database migrations started: %v", dsn)
-	m, err := migrate.New("file://db/migrations", dsn)
+	migrationSource := fmt.Sprintf("file://%s/migrations", cfg.MigrationsFolderPath)
+	m, err := migrate.New(migrationSource, dsn)
 	if err != nil {
-		log.Error().Msgf("Failed to create migration instance: %v", err)
+		log.Error().Msgf("Failed to create migration instance: %v - migrationsSource: %s", err, migrationSource)
 		return err
 	}
 

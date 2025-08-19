@@ -25,10 +25,6 @@ WORKDIR /app
 # Copy the binary from the builder stage
 COPY --from=builder /app/kart-challenge .
 
-# Copy the configuration file
-COPY config /app/config
-COPY db /app/db
-
 # Expose the port (optional)
 EXPOSE 8080
 

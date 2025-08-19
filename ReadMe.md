@@ -53,6 +53,10 @@ minikube image load kart-challenge:latest
 # mount config and data
 minikube mount ./config:/mnt/config
 minikube mount ./promocodes:/mnt/promocodes
+minikube mount ./db:/mnt/db
+kubectl create configmap postgres-init \
+  --from-file=docker_postgres_init.sql=./scripts/docker_postgres_init.sql \
+  -n kart-challenge
 kubectl apply -k ./deployment/k8s/
 
 # verify
@@ -96,6 +100,6 @@ minikube delete --all
 - [ ] Implement the rate limiting
 - [ ] Implement the security
 - [ ] Implement the monitoring
-- [ ] Implement the tracing
-- [ ] Create private schema for postgres
+- [x] Implement the tracing
+- [x] Create private schema for postgres
 - [x] Add lint

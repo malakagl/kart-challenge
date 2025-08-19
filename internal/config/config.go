@@ -21,14 +21,15 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	Host     string `yaml:"host" validate:"required"`
-	Port     int    `yaml:"port" validate:"required"`
-	Name     string `yaml:"name" validate:"required"`
-	User     string `yaml:"user" validate:"required"`
-	Password string `yaml:"password" validate:"required"`
-	SSLMode  string `yaml:"sslMode"`
-	Debug    bool   `yaml:"debug"`
-	Type     string `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
+	Host                 string `yaml:"host" validate:"required"`
+	Port                 int    `yaml:"port" validate:"required"`
+	Name                 string `yaml:"name" validate:"required"`
+	User                 string `yaml:"user" validate:"required"`
+	Password             string `yaml:"password" validate:"required"`
+	MigrationsFolderPath string `yaml:"migrationsFolderPath" validate:"required"`
+	SSLMode              string `yaml:"sslMode"`
+	Debug                bool   `yaml:"debug"`
+	Type                 string `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
 }
 
 type CouponCodeConfig struct {
