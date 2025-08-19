@@ -21,6 +21,13 @@ func Start(cfg *config.Config) error {
 	}
 
 	couponcode.SetCouponCodeFiles(cfg.CouponCode.FilePaths)
+	go func() {
+		err := couponcode.SetupCouponCodeFiles(cfg.CouponCode.FilePaths)
+		if err != nil {
+			log.Error().Msgf("couponcode setup failed: %v", err)
+		}
+	}()
+
 	db, err := database.Connect(context.Background(), &cfg.Database)
 	if err != nil {
 		log.Error().Msgf("failed to connect to database: %v", err)

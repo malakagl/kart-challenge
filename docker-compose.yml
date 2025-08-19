@@ -26,7 +26,7 @@ services:
       - postgres
     ports:
       - "8080:8080"
-    entrypoint: ["./kart-challenge", "--config", "/mnt/config/config.docker.yaml"]
+    entrypoint: ["./kart-challenge", "--config", "/mnt/config/config.$ENVIRONMENT.yaml"]
     networks:
       - kart-challenge-network
     volumes:

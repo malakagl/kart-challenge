@@ -51,5 +51,5 @@ func (o *OrderHandler) CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Success(w, orderRes)
+	response.Success(w, http.StatusCreated, orderRes)
 }

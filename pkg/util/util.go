@@ -6,13 +6,11 @@ import (
 	"strconv"
 )
 
-// RelativeFilePath constructs a relative file path based on the current file's location.
-// It takes a file name and a location offset, which is typically used to navigate to the
-// desired directory structure relative to the current file's directory.
+// AbsoluteFilePath constructs an absolute file path based on relative path.
 // The function returns the absolute path to the specified file.
-func RelativeFilePath(file, locOffset string) string {
+func AbsoluteFilePath(file, relativePath string) string {
 	_, thisFile, _, _ := runtime.Caller(0) // 0 = this function
-	baseDir := filepath.Join(filepath.Dir(thisFile), locOffset)
+	baseDir := filepath.Join(filepath.Dir(thisFile), relativePath)
 	return filepath.Join(baseDir, file)
 }
 

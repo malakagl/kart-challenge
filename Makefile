@@ -35,6 +35,11 @@ docker-stop:
 lint:
 	golangci-lint run ./...
 
+run-it:
+	docker compose up -d postgres
+	ENVIRONMENT=test docker compose up -d --build kart-challenge
+	go test -v ./tests/e2e -args -config=../../config/config.test.yaml
+
 help:
 	@echo "Available commands:"
 	@echo "  make all          - Run tidy, fmt, and test"

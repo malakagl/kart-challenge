@@ -23,18 +23,13 @@ func NewProductHandler(s services.IProductService) *ProductHandler {
 func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	products, err := h.service.FindAll(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, errors2.ErrProductNotFound) {
 		log.WithCtx(ctx).Error().Msgf("Error fetching products: %v", err)
-		if errors.Is(err, errors2.ErrProductNotFound) {
-			response.Error(w, http.StatusNotFound, "No products found", "No products available in the database")
-			return
-		}
-
 		response.Error(w, http.StatusInternalServerError, "Error fetching products", "Error fetching products")
 		return
 	}
 
-	response.Success(w, products)
+	response.Success(w, http.StatusOK, products)
 }
 
 func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -48,16 +43,11 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 	}
 
 	product, err := h.service.FindByID(ctx, productId)
-	if err != nil {
+	if err != nil && !errors.Is(err, errors2.ErrProductNotFound) {
 		log.WithCtx(ctx).Error().Msgf("Error fetching product: %v", err)
-		if errors.Is(err, errors2.ErrProductNotFound) {
-			response.Error(w, http.StatusNotFound, "No products found", "No products found in the database")
-			return
-		}
-
 		response.Error(w, http.StatusInternalServerError, "Error fetching products", "Error fetching products")
 		return
 	}
 
-	response.Success(w, product)
+	response.Success(w, http.StatusOK, product)
 }

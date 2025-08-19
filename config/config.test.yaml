@@ -1,0 +1,25 @@
+server:
+  port: 8080
+  host: ""
+
+database:
+  type: "postgres"
+  user: "test_user_it"
+  password: "test_password_it"
+  host: "postgres"
+  port: 5432
+  name: "test"
+  sslMode: "disable"
+  debug: true
+  migrationsFolderPath: /mnt/db
+
+logging:
+  level: debug
+  jsonFormat: false
+
+couponCode:
+  unzipped: false
+  filePaths:
+    - /mnt/promocodes/couponbase1.gz
+    - /mnt/promocodes/couponbase2.gz
+    - /mnt/promocodes/couponbase3.gz
