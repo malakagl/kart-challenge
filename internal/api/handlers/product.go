@@ -43,7 +43,13 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 	}
 
 	product, err := h.service.FindByID(ctx, productId)
-	if err != nil && !errors.Is(err, errors2.ErrProductNotFound) {
+	if err != nil {
+		log.WithCtx(ctx).Error().Msgf("Error fetching product: %v", err)
+		if errors.Is(err, errors2.ErrProductNotFound) {
+			response.Error(w, http.StatusNotFound, "No products found", "No products found in the database")
+			return
+		}
+
 		log.WithCtx(ctx).Error().Msgf("Error fetching product: %v", err)
 		response.Error(w, http.StatusInternalServerError, "Error fetching products", "Error fetching products")
 		return

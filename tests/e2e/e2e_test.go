@@ -1,6 +1,7 @@
 package e2e
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"fmt"
@@ -26,11 +27,26 @@ func TestMain(m *testing.M) {
 	if !waitForPostgres() {
 		log.Fatal("timed out waiting for postgres")
 	}
-	seedPostgresData()
 
-	// Run tests
+	seedPostgresData()
 	code := m.Run()
+	tearDownTestData()
+
 	os.Exit(code)
+}
+
+func tearDownTestData() {
+	log.Println("tearing down test database")
+	ctx := context.Background()
+	_, err := dbPool.Exec(ctx, `
+        TRUNCATE TABLE 
+            kart_challenge_it.products, 
+            kart_challenge_it.orders
+        RESTART IDENTITY CASCADE;
+    `)
+	if err != nil {
+		log.Println("tear down data encountered error, ", err)
+	}
 }
 
 func loadConfig() {
@@ -93,12 +109,109 @@ func seedPostgresData() {
 }
 
 func TestProductsAPI(t *testing.T) {
-	url := fmt.Sprintf("http://%s:%d/products", cfg.Server.Host, cfg.Server.Port)
-	resp, err := http.Get(url)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
+	type args struct {
+		productId string
+		apiKey    string
+	}
+	type expected struct {
+		statusCode int
+		body       string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected expected
+	}{
+		{
+			name:     "invalid api key",
+			args:     args{apiKey: "invalid"},
+			expected: expected{statusCode: http.StatusUnauthorized, body: "Unauthorized"},
+		},
+		{
+			name:     "success get all products",
+			args:     args{apiKey: "apitest"},
+			expected: expected{statusCode: http.StatusOK, body: "OK"},
+		},
+		{
+			name:     "success get one product",
+			args:     args{apiKey: "apitest", productId: "/1"},
+			expected: expected{statusCode: http.StatusOK, body: "OK"},
+		},
+	}
+	for _, tt := range tests {
+		url := fmt.Sprintf("http://%s:%d/product"+tt.args.productId, cfg.Server.Host, cfg.Server.Port)
+		req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
+		require.NoError(t, err, tt.name)
 
-	body, _ := io.ReadAll(resp.Body)
-	assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
-	assert.Contains(t, string(body), "Unauthorized")
+		req.Header.Set("api_key", tt.args.apiKey)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		require.NoError(t, err, tt.name)
+		defer func() { _ = resp.Body.Close() }()
+
+		body, _ := io.ReadAll(resp.Body)
+		assert.Equal(t, tt.expected.statusCode, resp.StatusCode, tt.name)
+		assert.Contains(t, string(body), tt.expected.body, tt.name)
+	}
+}
+
+func TestOrderAPI(t *testing.T) {
+	type arg struct {
+		couponCode string
+		productID  string
+		apiKey     string
+	}
+	type expect struct {
+		statusCode int
+		body       string
+	}
+	tests := []struct {
+		name     string
+		args     arg
+		expected expect
+	}{
+		{
+			name:     "invalid api key",
+			args:     arg{apiKey: "invalid"},
+			expected: expect{statusCode: http.StatusUnauthorized, body: "Unauthorized"},
+		},
+		{
+			name:     "invalid coupon code",
+			args:     arg{apiKey: "create_order", productID: "1", couponCode: "invalid"},
+			expected: expect{statusCode: http.StatusUnprocessableEntity, body: "invalid coupon code"},
+		},
+		{
+			name:     "invalid request body",
+			args:     arg{apiKey: "create_order", productID: ""},
+			expected: expect{statusCode: http.StatusBadRequest, body: "Invalid request dat"},
+		},
+		{
+			name:     "success order",
+			args:     arg{apiKey: "create_order", productID: "1", couponCode: "FIFTYOFF"},
+			expected: expect{statusCode: http.StatusCreated, body: "OK"},
+		},
+	}
+	for _, tt := range tests {
+		url := fmt.Sprintf("http://%s:%d/order", cfg.Server.Host, cfg.Server.Port)
+		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{
+    			"couponCode": "`+tt.args.couponCode+`",
+    			"items": [
+        			{
+            			"productId": "`+tt.args.productID+`",
+            			"quantity": 10
+        			}
+    			]
+			}`)))
+		require.NoError(t, err, tt.name)
+
+		req.Header.Set("api_key", tt.args.apiKey)
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		require.NoError(t, err, tt.name)
+		defer func() { _ = resp.Body.Close() }()
+
+		body, _ := io.ReadAll(resp.Body)
+		assert.Equal(t, tt.expected.statusCode, resp.StatusCode, tt.name)
+		assert.Contains(t, string(body), tt.expected.body, tt.name)
+	}
 }

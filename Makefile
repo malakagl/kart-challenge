@@ -1,6 +1,6 @@
 .PHONY: all tidy fmt run test
 
-all: tidy fmt lint test
+all: tidy fmt lint test run-it
 
 tidy:
 	go mod tidy
@@ -12,7 +12,7 @@ run:
 	go run -race ./cmd/app/main.go --config ./config/config.local.yaml
 
 test:
-	go test ./... -v
+	go test -race $(shell go list ./... | grep -v '/tests') -v
 
 start-dep:
 	mkdir -p ./postgres_data
@@ -25,8 +25,8 @@ docker-build:
 	docker build -f ./docker/Dockerfile -t kart-challenge .
 
 docker-start:
-	docker compose up -d postgres
-	docker compose up -d --build kart-challenge
+	ENVIRONMENT=docker docker compose up -d postgres
+	ENVIRONMENT=docker docker compose up -d --build kart-challenge
 
 docker-stop:
 	docker compose down kart-challenge

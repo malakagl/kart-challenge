@@ -17,6 +17,12 @@ make run
 make test
 ```
 
+### Run integration tests
+
+```
+make run-it
+```
+
 ### Useful commands
 
 ```
@@ -88,7 +94,7 @@ minikube delete --all
 - [x] Implement logging
 - [ ] Implement the error handling
 - [x] Implement the configuration management
-- [ ] Implement the integration tests
+- [x] Implement the integration tests
 - [x] Implement the Dockerfile
 - [x] Implement the Makefile
 - [x] Implement the README.md

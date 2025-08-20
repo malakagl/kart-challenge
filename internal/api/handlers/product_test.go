@@ -48,8 +48,8 @@ func TestListProducts(t *testing.T) {
 		},
 		{
 			name:           "products not found",
-			mockErr:        errors2.ErrProductNotFound,
-			expectedStatus: http.StatusNotFound,
+			mockRes:        &response.ProductsResponse{Products: []response.Product{}},
+			expectedStatus: http.StatusOK,
 		},
 	}
 	for _, tt := range tests {

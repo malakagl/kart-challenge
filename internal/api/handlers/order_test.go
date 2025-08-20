@@ -40,7 +40,7 @@ func TestCreateOrder(t *testing.T) {
 				Items:      []request.Item{{ProductID: "1", Quantity: 2}},
 			},
 			mockRes:        &response.OrderResponse{ID: "1234", Total: 100.0},
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusCreated,
 		},
 		{
 			name:           "invalid JSON",

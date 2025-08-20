@@ -19,6 +19,7 @@ database:
   sslMode: "disable"
   debug: false
   type: "postgres"
+  migrationsFolderPath: "db"
 logging:
   level: debug
   jsonFormat: true
