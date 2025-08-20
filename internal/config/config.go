@@ -3,6 +3,7 @@ package config
 import (
 	"log"
 	"os"
+	"time"
 
 	validate "github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v3"
@@ -16,8 +17,9 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Host string `yaml:"host"`
-	Port int    `yaml:"port" validate:"required"`
+	Host            string        `yaml:"host"`
+	Port            int           `yaml:"port" validate:"required"`
+	GracefulTimeout time.Duration `yaml:"gracefulTimeout" validate:"required"`
 }
 
 type DatabaseConfig struct {

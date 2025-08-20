@@ -10,6 +10,7 @@ func TestLoadConfig_ValidFile(t *testing.T) {
 server:
   host: "localhost"
   port: 8080
+  gracefulTimeout: 30s
 database:
   host: "dbhost"
   port: 5432
@@ -46,6 +47,9 @@ couponCode:
 	}
 	if cfg.Server.Port != 8080 {
 		t.Errorf("expected server port 8080, got %d", cfg.Server.Port)
+	}
+	if cfg.Server.GracefulTimeout.String() != "30s" {
+		t.Errorf("expected server greacefulTimeout 30s, got %d", cfg.Server.Port)
 	}
 	if cfg.Database.Type != "postgres" {
 		t.Errorf("expected database type postgres, got %s", cfg.Database.Type)

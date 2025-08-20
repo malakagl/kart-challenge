@@ -2,8 +2,10 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/internal/config"
@@ -14,6 +16,10 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
+var httpServer *http.Server
+
+// Start sets up the database, coupon codes, routes, and starts the HTTP server.
+// Returns the server instance for later shutdown.
 func Start(cfg *config.Config) error {
 	if err := database.RunMigrations(cfg.Database); err != nil {
 		log.Error().Msgf("database migrations failed: %v", err)
@@ -21,12 +27,12 @@ func Start(cfg *config.Config) error {
 	}
 
 	couponcode.SetCouponCodeFiles(cfg.CouponCode.FilePaths)
-	go func() {
-		err := couponcode.SetupCouponCodeFiles(cfg.CouponCode.FilePaths)
-		if err != nil {
-			log.Error().Msgf("couponcode setup failed: %v", err)
-		}
-	}()
+	// go func() {
+	//	err := couponcode.SetupCouponCodeFiles(cfg.CouponCode.FilePaths)
+	//	if err != nil {
+	//		log.Error().Msgf("couponcode setup failed: %v", err)
+	//	}
+	// }()
 
 	db, err := database.Connect(context.Background(), &cfg.Database)
 	if err != nil {
@@ -40,7 +46,39 @@ func Start(cfg *config.Config) error {
 	routes.AddProductRoutes(r, db)
 	routes.AddOrderRoutes(r, db)
 
-	serverURL := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	log.Info().Msgf("Server starting on %s", serverURL)
-	return http.ListenAndServe(serverURL, r)
+	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
+	httpServer = &http.Server{
+		Addr:    serverAddr,
+		Handler: r,
+	}
+
+	log.Info().Msgf("Server starting on %s", serverAddr)
+
+	// Start server in a goroutine to make it stoppable
+	go func() {
+		if errSrv := httpServer.ListenAndServe(); errSrv != nil && !errors.Is(errSrv, http.ErrServerClosed) {
+			log.Error().Msgf("HTTP server failed: %v", errSrv)
+		}
+	}()
+
+	return nil
+}
+
+// Stop gracefully shuts down the server with a context timeout.
+func Stop(ctx context.Context) error {
+	if httpServer == nil {
+		return nil
+	}
+
+	log.Info().Msg("Shutting down server gracefully")
+	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+
+	if err := httpServer.Shutdown(shutdownCtx); err != nil {
+		log.Error().Msgf("Server shutdown error: %v", err)
+		return err
+	}
+
+	log.Info().Msg("Server stopped successfully")
+	return nil
 }
