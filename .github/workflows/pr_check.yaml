@@ -1,10 +1,6 @@
 name: Run unit tests
 
 on:
-  push:
-    branches:
-      - develop
-      - main
   pull_request:
     branches:
       - main   # Only run on PRs targeting main
