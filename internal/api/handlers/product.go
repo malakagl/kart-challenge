@@ -37,15 +37,15 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 	pID := chi.URLParam(r, "productID")
 	productId, err := util.StringToUint(pID)
 	if err != nil || productId == 0 {
-		log.WithCtx(ctx).Error().Msgf("Invalid product ID in order request: %s", pID)
+		log.WithCtx(ctx).Warn().Msgf("Invalid product ID: %s", pID)
 		response.Error(w, http.StatusBadRequest, "Invalid product ID", "Invalid product ID")
 		return
 	}
 
 	product, err := h.service.FindByID(ctx, productId)
 	if err != nil {
-		log.WithCtx(ctx).Error().Msgf("Error fetching product: %v", err)
 		if errors.Is(err, errors2.ErrProductNotFound) {
+			log.WithCtx(ctx).Warn().Msgf("Product not found: %s", pID)
 			response.Error(w, http.StatusNotFound, "No products found", "No products found in the database")
 			return
 		}

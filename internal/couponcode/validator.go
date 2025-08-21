@@ -37,7 +37,7 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	if strings.HasSuffix(strings.ToLower(filepath.Ext(path)), ".gz") {
 		gz, err := gzip.NewReader(f)
 		if err != nil {
-			log.Error().Msgf("Error creating gzip reader: %v", err)
+			log.WithCtx(ctx).Error().Msgf("Error creating gzip reader: %v", err)
 			return
 		}
 		defer func() { _ = gz.Close() }()
@@ -48,7 +48,7 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
-			log.Debug().Msgf("Context done: %v", path)
+			log.WithCtx(ctx).Debug().Msgf("Context done: %v", path)
 			return
 		default:
 			if strings.TrimSpace(scanner.Text()) == code {

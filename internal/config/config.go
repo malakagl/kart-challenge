@@ -1,7 +1,7 @@
 package config
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"time"
 
@@ -40,7 +40,7 @@ type CouponCodeConfig struct {
 }
 
 type LoggingConfig struct {
-	Level      string `json:"level"`
+	Level      string `yaml:"level" validate:"required"`
 	JsonFormat bool   `yaml:"jsonFormat"`
 }
 
@@ -49,18 +49,15 @@ func LoadConfig(path string) (*Config, error) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		log.Printf("failed to read config file %s: %v\n", path, err)
-		return nil, err
+		return nil, fmt.Errorf("failed to read config file %s: %v\n", path, err)
 	}
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
-		log.Printf("failed to parse config file: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("failed to parse config file: %v", err)
 	}
 
 	if err := validate.New().Struct(cfg); err != nil {
-		log.Printf("config validation failed: %v", err)
-		return nil, err
+		return nil, fmt.Errorf("config validation failed: %v", err)
 	}
 
 	return cfg, nil

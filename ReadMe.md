@@ -99,8 +99,8 @@ minikube delete --all
 - [x] Implement the Makefile
 - [x] Implement the README.md
 - [ ] Implement the CI/CD pipeline
-- [ ] Implement the GitHub Actions workflow
-- [ ] Implement the GitHub Pull Requests
+- [x] Implement the GitHub Actions workflow
+- [x] Implement the GitHub Pull Requests
 - [ ] Implement money package for handling money
 - [ ] Implement the caching
 - [ ] Implement the rate limiting
@@ -109,3 +109,4 @@ minikube delete --all
 - [x] Implement the tracing
 - [x] Create private schema for postgres
 - [x] Add lint
+- [ ] Add idempotency to order create API
