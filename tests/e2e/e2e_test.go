@@ -139,7 +139,7 @@ func TestProductsAPI(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		url := fmt.Sprintf("http://%s:%d/product"+tt.args.productId, cfg.Server.Host, cfg.Server.Port)
+		url := fmt.Sprintf("http://%s:%d/products"+tt.args.productId, cfg.Server.Host, cfg.Server.Port)
 		req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
 		require.NoError(t, err, tt.name)
 
@@ -192,7 +192,7 @@ func TestOrderAPI(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		url := fmt.Sprintf("http://%s:%d/order", cfg.Server.Host, cfg.Server.Port)
+		url := fmt.Sprintf("http://%s:%d/orders", cfg.Server.Host, cfg.Server.Port)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{
     			"couponCode": "`+tt.args.couponCode+`",
     			"items": [

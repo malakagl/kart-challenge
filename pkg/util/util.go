@@ -1,13 +1,12 @@
 package util
 
 import (
-	"errors"
 	"net/http"
 	"path/filepath"
 	"runtime"
 	"strconv"
 
-	errors2 "github.com/malakagl/kart-challenge/pkg/errors"
+	"github.com/malakagl/kart-challenge/pkg/errors"
 )
 
 // AbsoluteFilePath constructs an absolute file path based on relative path.
@@ -29,7 +28,7 @@ func StringToUint(s string) (uint, error) {
 
 func MapErrorToHTTP(err error) (int, string) {
 	switch {
-	case errors.Is(err, errors2.ErrInvalidCouponCode):
+	case errors.Is(err, errors.ErrInvalidCouponCode):
 		return http.StatusUnprocessableEntity, "Invalid coupon code"
 	default:
 		return http.StatusInternalServerError, "Failed to create order"

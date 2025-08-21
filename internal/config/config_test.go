@@ -10,6 +10,7 @@ func TestLoadConfig_ValidFile(t *testing.T) {
 server:
   host: "localhost"
   port: 8080
+  maxCouponCodeCacheSize: 1000
   gracefulTimeout: 30s
 database:
   host: "dbhost"

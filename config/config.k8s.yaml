@@ -1,6 +1,7 @@
 server:
   port: 8080
   host: "0.0.0.0"
+  maxCouponCodeCacheSize: 1000
   gracefulTimeout: 30s # 30 seconds
 
 database:
@@ -19,7 +20,7 @@ logging:
   jsonFormat: false
 
 couponCode:
-  unzipped: true
+  unzipped: false
   filePaths:
     - /mnt/promocodes/couponbase1.gz
     - /mnt/promocodes/couponbase2.gz

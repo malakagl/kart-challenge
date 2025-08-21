@@ -36,10 +36,6 @@ func NewOrderService(
 }
 
 func (o *OrderService) isCouponCodeValid(ctx context.Context, code string) (bool, error) {
-	if len(code) < 8 || len(code) > 10 {
-		return false, nil
-	}
-
 	return couponcode.ValidateCouponCode(ctx, code)
 	// use database
 	// count, errors := o.couponCodeRepo.CountFilesByCode(code)
@@ -54,7 +50,7 @@ func (o *OrderService) isCouponCodeValid(ctx context.Context, code string) (bool
 func (o *OrderService) Create(ctx context.Context, req *request.OrderRequest) (*response.OrderResponse, error) {
 	couponCodeIsValid, err := o.isCouponCodeValid(ctx, req.CouponCode)
 	if err != nil {
-		return nil, err
+		return nil, errors.ErrInternalServerError
 	}
 
 	if !couponCodeIsValid { // !h.couponValidator.ValidateCouponCode(orderReq.CouponCode)

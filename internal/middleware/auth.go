@@ -8,6 +8,11 @@ import (
 
 func AuthenticationMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" { // skip auth
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		apiKey := r.Header.Get("api_key")
 		if apiKey == "" || !isValidApiKey(apiKey, r.Method, r.RequestURI) {
 			response.Error(w, http.StatusUnauthorized, "AuthError", http.StatusText(http.StatusUnauthorized))
@@ -24,7 +29,7 @@ type accessKey struct {
 }
 
 var apiKeyMap = map[accessKey]string{
-	{Method: http.MethodPost, Uri: "/order"}: "create_order",
+	{Method: http.MethodPost, Uri: "/orders"}: "create_order",
 }
 
 // Replace with actual API key validation logic

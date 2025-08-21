@@ -84,6 +84,62 @@ minikube delete --all
 - Took around 25 minutes to load all coupon codes to the database.
 - To read gz files via code and scan it took around 15 seconds.
 
+### Benchmark coupon validation
+
+```
+go test -bench=. -benchmem ./internal/couponcode/...
+```
+Using compressed coupon code files.
+
+```
+% go test -bench=. -benchmem ./internal/couponcode/...
+goos: darwin
+goarch: amd64
+pkg: github.com/malakagl/kart-challenge/internal/couponcode
+cpu: Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz
+BenchmarkValidateCouponCode_Valid-6 1 13770662525 ns/op 6093944 B/op 289099 allocs/op
+BenchmarkValidateCouponCode_Invalid-6 1 13473384996 ns/op 6129808 B/op 290891 allocs/op
+PASS
+ok github.com/malakagl/kart-challenge/internal/couponcode 27.598s
+```
+
+| Benchmark    | Iterations | Time per op | Allocated Bytes | Allocations |
+| ------------ | ---------- | ----------- | --------------- | ----------- |
+| Valid code   | 1          | ~13.8s     | ~6 MB          | 289k        |
+| Invalid code | 1          | ~13.5s     | ~6.1 MB        | 291k        |
+
+Using decompressed coupon code files.
+
+```
+% go test -bench=. -benchmem ./internal/couponcode/...
+goos: darwin
+goarch: amd64
+pkg: github.com/malakagl/kart-challenge/internal/couponcode
+cpu: Intel(R) Core(TM) i5-8500 CPU @ 3.00GHz
+BenchmarkValidateCouponCode_Valid-6                    1        4274126382 ns/op           14904 B/op         31 allocs/op
+BenchmarkValidateCouponCode_Invalid-6                  1        4200461553 ns/op           14376 B/op         29 allocs/op
+PASS
+ok      github.com/malakagl/kart-challenge/internal/couponcode  8.849s
+```
+| Benchmark    | Iterations | Time per op | Allocated Bytes | Allocations |
+| ------------ | ---------- |-------------|-----------------| ----------- |
+| Valid code   | 1          | ~4.27s      | ~14.9 KB        | 31          |
+| Invalid code | 1          | ~4.20s      | ~14.3 KB        | 29          |
+
+### Strategy
+
+Spawn a goroutine to decompress files on server start up.
+This will take around 1-2 minutes.
+Meanwhile, serve any requests using compressed files.
+These requests will take around 30 seconds to process. 
+But it should be still acceptable given this is a deployment window.
+Once decompress of files completed started using decompressed files to validate coupon code.
+Also implemented a cache to store a limited number of validated coupon codes.
+This way if a malicious user tries a same coupon code multiple times it will not use a lot of server resources.
+
+Another solution is to load all the coupon codes to postgres database.
+Initial loading will take a bit of time. But coupon code validation will be much faster.
+
 ### Tasks
 - [x] Implement the API server
 - [x] Implement the OpenAPI spec
@@ -102,7 +158,7 @@ minikube delete --all
 - [x] Implement the GitHub Actions workflow
 - [x] Implement the GitHub Pull Requests
 - [ ] Implement money package for handling money
-- [ ] Implement the caching
+- [x] Implement the caching
 - [ ] Implement the rate limiting
 - [ ] Implement the security
 - [ ] Implement the monitoring

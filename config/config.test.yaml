@@ -1,6 +1,7 @@
 server:
   port: 8080
   host: ""
+  maxCouponCodeCacheSize: 1000
   gracefulTimeout: 30s # 30 seconds
 
 database:

@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	errors2 "github.com/malakagl/kart-challenge/pkg/errors"
+	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
 	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 	"github.com/malakagl/kart-challenge/pkg/services"
@@ -23,7 +22,7 @@ func NewProductHandler(s services.IProductService) *ProductHandler {
 func (h *ProductHandler) ListProducts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	products, err := h.service.FindAll(ctx)
-	if err != nil && !errors.Is(err, errors2.ErrProductNotFound) {
+	if err != nil && !errors.Is(err, errors.ErrProductNotFound) {
 		log.WithCtx(ctx).Error().Msgf("Error fetching products: %v", err)
 		response.Error(w, http.StatusInternalServerError, "Error fetching products", "Error fetching products")
 		return
@@ -44,7 +43,7 @@ func (h *ProductHandler) GetProductByID(w http.ResponseWriter, r *http.Request) 
 
 	product, err := h.service.FindByID(ctx, productId)
 	if err != nil {
-		if errors.Is(err, errors2.ErrProductNotFound) {
+		if errors.Is(err, errors.ErrProductNotFound) {
 			log.WithCtx(ctx).Warn().Msgf("Product not found: %s", pID)
 			response.Error(w, http.StatusNotFound, "No products found", "No products found in the database")
 			return

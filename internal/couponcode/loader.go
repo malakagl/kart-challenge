@@ -73,6 +73,14 @@ func UnZipGzipFile(input string) error {
 		return err
 	}
 
-	log.Error().Msgf("unzipped file %s to %s", input, output)
+	log.Info().Msgf("unzipped file %s to %s", input, output)
+	for i, file := range couponCodeFiles {
+		if input == file {
+			rwMutex.Lock()
+			defer rwMutex.Unlock()
+			couponCodeFiles[i] = output
+		}
+	}
+
 	return nil
 }

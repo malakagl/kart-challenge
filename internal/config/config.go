@@ -17,9 +17,10 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Host            string        `yaml:"host"`
-	Port            int           `yaml:"port" validate:"required"`
-	GracefulTimeout time.Duration `yaml:"gracefulTimeout" validate:"required"`
+	Host                   string        `yaml:"host"`
+	Port                   int           `yaml:"port" validate:"required"`
+	MaxCouponCodeCacheSize int           `yaml:"maxCouponCodeCacheSize"`
+	GracefulTimeout        time.Duration `yaml:"gracefulTimeout" validate:"required"`
 }
 
 type DatabaseConfig struct {
