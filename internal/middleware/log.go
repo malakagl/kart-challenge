@@ -7,7 +7,7 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
-func LoggingMiddleware(next http.Handler) http.Handler {
+func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		startTime := time.Now()
 		defer func() {

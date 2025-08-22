@@ -6,7 +6,7 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 )
 
-func AuthenticationMiddleware(next http.Handler) http.Handler {
+func Authentication(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" { // skip auth
 			next.ServeHTTP(w, r)

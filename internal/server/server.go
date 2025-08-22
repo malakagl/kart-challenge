@@ -44,8 +44,9 @@ func Start(cfg *config.Config) error {
 	}
 
 	log.Info().Msgf("creating routes")
+	middleware.SetRateLimits(cfg.Server.ReqLimitPerIPPerSec, cfg.Server.ReqBurstPerIPPerSec)
 	r := chi.NewRouter()
-	r.Use(middleware.TraceMiddleware, middleware.AuthenticationMiddleware, middleware.LoggingMiddleware)
+	r.Use(middleware.Trace, middleware.Authentication, middleware.Logging, middleware.RateLimit)
 	routes.AddHealthCheckRoutes(r)
 	routes.AddProductRoutes(r, db)
 	routes.AddOrderRoutes(r, db)

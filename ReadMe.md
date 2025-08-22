@@ -159,7 +159,7 @@ Initial loading will take a bit of time. But coupon code validation will be much
 - [x] Implement the GitHub Pull Requests
 - [ ] Implement money package for handling money
 - [x] Implement the caching
-- [ ] Implement the rate limiting
+- [x] Implement the rate limiting
 - [ ] Implement the security
 - [ ] Implement the monitoring
 - [x] Implement the tracing

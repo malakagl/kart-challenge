@@ -8,8 +8,8 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/constants"
 )
 
-// TraceMiddleware ensures every request has a trace ID.
-func TraceMiddleware(next http.Handler) http.Handler {
+// Trace ensures every request has a trace ID.
+func Trace(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		traceID := r.Header.Get("X-Request-ID")
 		if traceID == "" {

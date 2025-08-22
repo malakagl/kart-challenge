@@ -11,6 +11,8 @@ server:
   host: "localhost"
   port: 8080
   maxCouponCodeCacheSize: 1000
+  reqLimitPerIPPerSec: 5
+  reqBurstPerIPPerSec: 10
   gracefulTimeout: 30s
 database:
   host: "dbhost"

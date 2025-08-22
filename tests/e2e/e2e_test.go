@@ -140,18 +140,9 @@ func TestProductsAPI(t *testing.T) {
 	}
 	for _, tt := range tests {
 		url := fmt.Sprintf("http://%s:%d/products"+tt.args.productId, cfg.Server.Host, cfg.Server.Port)
-		req, err := http.NewRequest(http.MethodGet, url, http.NoBody)
-		require.NoError(t, err, tt.name)
-
-		req.Header.Set("api_key", tt.args.apiKey)
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		require.NoError(t, err, tt.name)
-		defer func() { _ = resp.Body.Close() }()
-
-		body, _ := io.ReadAll(resp.Body)
-		assert.Equal(t, tt.expected.statusCode, resp.StatusCode, tt.name)
-		assert.Contains(t, string(body), tt.expected.body, tt.name)
+		status, body := doRequest(t, http.MethodGet, url, tt.args.apiKey, nil)
+		assert.Equal(t, tt.expected.statusCode, status, tt.name)
+		assert.Contains(t, body, tt.expected.body, tt.name)
 	}
 }
 
@@ -193,25 +184,31 @@ func TestOrderAPI(t *testing.T) {
 	}
 	for _, tt := range tests {
 		url := fmt.Sprintf("http://%s:%d/orders", cfg.Server.Host, cfg.Server.Port)
-		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{
-    			"couponCode": "`+tt.args.couponCode+`",
+		b := []byte(`{
+    			"couponCode": "` + tt.args.couponCode + `",
     			"items": [
         			{
-            			"productId": "`+tt.args.productID+`",
+            			"productId": "` + tt.args.productID + `",
             			"quantity": 10
         			}
     			]
-			}`)))
-		require.NoError(t, err, tt.name)
-
-		req.Header.Set("api_key", tt.args.apiKey)
-		client := &http.Client{}
-		resp, err := client.Do(req)
-		require.NoError(t, err, tt.name)
-		defer func() { _ = resp.Body.Close() }()
-
-		body, _ := io.ReadAll(resp.Body)
-		assert.Equal(t, tt.expected.statusCode, resp.StatusCode, tt.name)
-		assert.Contains(t, string(body), tt.expected.body, tt.name)
+			}`)
+		status, body := doRequest(t, http.MethodPost, url, tt.args.apiKey, b)
+		assert.Equal(t, tt.expected.statusCode, status, tt.name)
+		assert.Contains(t, body, tt.expected.body, tt.name)
 	}
+}
+
+func doRequest(t *testing.T, method, url, apiKey string, body []byte) (int, string) {
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	require.NoError(t, err)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	req.Header.Set("api_key", apiKey)
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+	return resp.StatusCode, string(respBody)
 }

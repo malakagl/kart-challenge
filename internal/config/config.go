@@ -20,6 +20,8 @@ type ServerConfig struct {
 	Host                   string        `yaml:"host"`
 	Port                   int           `yaml:"port" validate:"required"`
 	MaxCouponCodeCacheSize int           `yaml:"maxCouponCodeCacheSize"`
+	ReqLimitPerIPPerSec    int           `yaml:"reqLimitPerIPPerSec" validate:"required,min=1"`
+	ReqBurstPerIPPerSec    int           `yaml:"reqBurstPerIPPerSec" validate:"required,min=1"`
 	GracefulTimeout        time.Duration `yaml:"gracefulTimeout" validate:"required"`
 }
 
