@@ -30,8 +30,8 @@ func dataFilePath(name string) string {
 }
 
 func LoadCouponCodes() {
-	user := "user"
-	pass := "password"
+	user := "test_user"
+	pass := "test_password"
 	host := "localhost"
 	port := "5432"
 	name := "test"

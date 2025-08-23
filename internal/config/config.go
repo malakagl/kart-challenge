@@ -20,8 +20,8 @@ type ServerConfig struct {
 	Host                   string        `yaml:"host"`
 	Port                   int           `yaml:"port" validate:"required"`
 	MaxCouponCodeCacheSize int           `yaml:"maxCouponCodeCacheSize"`
-	ReqLimitPerIPPerSec    int           `yaml:"reqLimitPerIPPerSec" validate:"required,min=1"`
-	ReqBurstPerIPPerSec    int           `yaml:"reqBurstPerIPPerSec" validate:"required,min=1"`
+	ReqLimitPerIPPerSec    int           `yaml:"reqLimitPerIPPerSec" validate:"min=1"`
+	ReqBurstPerIPPerSec    int           `yaml:"reqBurstPerIPPerSec" validate:"min=1"`
 	GracefulTimeout        time.Duration `yaml:"gracefulTimeout" validate:"required"`
 }
 
@@ -52,7 +52,7 @@ func LoadConfig(path string) (*Config, error) {
 
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read config file %s: %v\n", path, err)
+		return nil, fmt.Errorf("failed to read config file %s: %w", path, err)
 	}
 
 	if err := yaml.Unmarshal(data, cfg); err != nil {
@@ -61,6 +61,11 @@ func LoadConfig(path string) (*Config, error) {
 
 	if err := validate.New().Struct(cfg); err != nil {
 		return nil, fmt.Errorf("config validation failed: %v", err)
+	}
+
+	// add defaults
+	if cfg.Database.SSLMode == "" {
+		cfg.Database.SSLMode = "disable"
 	}
 
 	return cfg, nil

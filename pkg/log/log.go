@@ -69,3 +69,7 @@ func Warn() *zerolog.Event {
 func Error() *zerolog.Event {
 	return Logger.Error()
 }
+
+func Fatal() *zerolog.Event {
+	return Logger.Fatal()
+}

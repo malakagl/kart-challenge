@@ -16,7 +16,7 @@ func Authentication(next http.Handler) http.Handler {
 
 		apiKey := r.Header.Get("x-api-key")
 		if apiKey == "" || !isValidApiKey(apiKey, r.Method, r.RequestURI) {
-			log.WithCtx(r.Context()).Error().Msgf("invalid api key %s for %s %s", apiKey, r.Method, r.RequestURI)
+			log.WithCtx(r.Context()).Debug().Msgf("invalid api key %s for %s %s", apiKey, r.Method, r.RequestURI)
 			response.Error(w, http.StatusUnauthorized, "AuthError", http.StatusText(http.StatusUnauthorized))
 			return
 		}

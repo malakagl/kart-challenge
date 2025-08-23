@@ -9,7 +9,7 @@ import (
 
 	"github.com/malakagl/kart-challenge/internal/config"
 	"github.com/malakagl/kart-challenge/internal/server"
-	logging "github.com/malakagl/kart-challenge/pkg/log"
+	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
 func main() {
@@ -19,30 +19,36 @@ func main() {
 
 	cfg, err := config.LoadConfig(cfgPath)
 	if err != nil {
-		panic("failed to load config: " + err.Error())
+		log.Fatal().Err(err).Msg("failed to load config")
 	}
 
-	logging.Init("kart-challenge", cfg.Logging)
-	logging.Info().Msgf("Server setting up on port: %d", cfg.Server.Port)
+	log.Init("kart-challenge", cfg.Logging)
+	log.Info().Msgf("Server setting up on port: %d", cfg.Server.Port)
 
-	if err := server.Start(cfg); err != nil {
-		logging.Logger.Fatal().Msgf("server failed to start: %v", err)
+	s := server.NewServer(cfg)
+	if err := s.Start(); err != nil {
+		log.Fatal().Err(err).Msg("server failed to start")
 	}
 
 	// Handle graceful shutdown
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigChan)
 
 	// Wait for termination signal
-	sig := <-sigChan
-	logging.Info().Msgf("Received signal: %s, shutting down...", sig)
+	select {
+	case sig := <-sigChan:
+		log.Info().Msgf("Received signal: %s, shutting down...", sig)
+	case srvErr := <-s.ErrChan:
+		log.Error().Err(srvErr).Msg("Received error from server. shutting down...")
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.GracefulTimeout)
 	defer cancel()
 
-	if err := server.Stop(ctx); err != nil {
-		logging.Logger.Fatal().Msgf("Server shutdown failed: %v", err)
+	if err := s.Stop(ctx); err != nil {
+		log.Fatal().Err(err).Msg("server shutdown failed")
 	}
 
-	logging.Info().Msg("Server exited gracefully")
+	log.Info().Msg("Server exited gracefully")
 }

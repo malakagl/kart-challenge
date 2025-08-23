@@ -11,7 +11,7 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/log"
 )
 
-func RunMigrations(cfg config.DatabaseConfig) error {
+func RunMigrations(cfg *config.DatabaseConfig) error {
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
 		cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.SSLMode,
@@ -24,6 +24,7 @@ func RunMigrations(cfg config.DatabaseConfig) error {
 		return err
 	}
 
+	defer m.Close()
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		log.Error().Msgf("Migration failed: %v", err)
 		return err

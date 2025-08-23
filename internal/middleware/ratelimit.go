@@ -3,9 +3,12 @@ package middleware
 import (
 	"net"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/malakagl/kart-challenge/pkg/log"
+	"github.com/malakagl/kart-challenge/pkg/models/dto/response"
 	"golang.org/x/time/rate"
 )
 
@@ -16,7 +19,7 @@ type visitor struct {
 
 var (
 	visitors   = make(map[string]*visitor)
-	mu         sync.Mutex
+	mu         sync.RWMutex
 	rateLimit  rate.Limit = 5
 	burstLimit            = 10
 )
@@ -36,31 +39,39 @@ func cleanupVisitors() {
 }
 
 func getVisitor(ip string) *rate.Limiter {
-	mu.Lock()
-	defer mu.Unlock()
-
+	mu.RLock()
 	v, exists := visitors[ip]
+	mu.RUnlock()
 	if !exists {
 		limiter := rate.NewLimiter(rateLimit, burstLimit)
+		mu.Lock()
 		visitors[ip] = &visitor{limiter, time.Now()}
+		mu.Unlock()
 		return limiter
 	}
 
+	mu.Lock()
 	v.lastSeen = time.Now()
+	mu.Unlock()
 	return v.limiter
 }
 
 func RateLimit(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ip, _, err := net.SplitHostPort(r.RemoteAddr)
+		clientIP, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
 			http.Error(w, "Unable to determine IP", http.StatusInternalServerError)
 			return
 		}
 
-		limiter := getVisitor(ip)
+		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+			clientIP = strings.Split(ip, ",")[0]
+		}
+
+		limiter := getVisitor(clientIP)
 		if !limiter.Allow() {
-			http.Error(w, "Too Many Requests", http.StatusTooManyRequests)
+			log.WithCtx(r.Context()).Warn().Msgf("Rate limit exceeded for IP %s", clientIP)
+			response.Error(w, http.StatusTooManyRequests, "Too Many Requests", "Please slow down.")
 			return
 		}
 

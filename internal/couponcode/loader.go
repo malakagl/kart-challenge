@@ -2,8 +2,10 @@ package couponcode
 
 import (
 	"compress/gzip"
+	"fmt"
 	"io"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -25,6 +27,7 @@ func SetupCouponCodeFiles(filePaths []string) error {
 			defer wg.Done()
 			if err := UnZipGzipFile(path); err != nil {
 				log.Error().Msgf("error unzipping file %s: %v", path, err)
+				errCh <- err
 			}
 		}(filePath)
 	}
@@ -41,6 +44,10 @@ func SetupCouponCodeFiles(filePaths []string) error {
 }
 
 func UnZipGzipFile(input string) error {
+	if !strings.HasSuffix(input, ".gz") {
+		return fmt.Errorf("input file must end with .gz")
+	}
+
 	output := input[:len(input)-3] + ".txt" // remove .gz extension
 	// Open gzip file
 	f, err := os.Open(input)
@@ -74,13 +81,14 @@ func UnZipGzipFile(input string) error {
 	}
 
 	log.Info().Msgf("unzipped file %s to %s", input, output)
+	rwMutex.Lock()
 	for i, file := range couponCodeFiles {
 		if input == file {
-			rwMutex.Lock()
-			defer rwMutex.Unlock()
 			couponCodeFiles[i] = output
+			break
 		}
 	}
+	rwMutex.Unlock()
 
 	return nil
 }

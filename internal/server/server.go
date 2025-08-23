@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/malakagl/kart-challenge/internal/config"
@@ -14,53 +13,68 @@ import (
 	"github.com/malakagl/kart-challenge/internal/routes"
 	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
+	"gorm.io/gorm"
 )
 
-var httpServer *http.Server
+type Server struct {
+	httpServer *http.Server
+	ErrChan    chan error
+	db         *gorm.DB
+	cfg        *config.Config
+}
+
+func NewServer(c *config.Config) *Server {
+	return &Server{
+		ErrChan: make(chan error, 1),
+		cfg:     c,
+	}
+}
 
 // Start sets up the database, coupon codes, routes, and starts the HTTP server.
 // Returns the server instance for later shutdown.
-func Start(cfg *config.Config) error {
-	if err := database.RunMigrations(cfg.Database); err != nil {
-		log.Error().Msgf("database migrations failed: %v", err)
+func (s *Server) Start() error {
+	if err := database.RunMigrations(&s.cfg.Database); err != nil {
+		log.Error().Err(err).Msgf("database migrations failed.")
 		return err
 	}
 
-	couponcode.SetCouponCodeFiles(cfg.CouponCode.FilePaths)
+	ctx := context.Background()
+	couponcode.SetCouponCodeFiles(s.cfg.CouponCode.FilePaths)
 	go func() {
 		log.Info().Msg("Started decompressing coupon code files in background")
-		err := couponcode.SetupCouponCodeFiles(cfg.CouponCode.FilePaths)
+		err := couponcode.SetupCouponCodeFiles(s.cfg.CouponCode.FilePaths)
 		if err != nil {
-			log.Error().Msgf("couponcode setup failed: %v", err)
+			log.Error().Err(err).Msg("coupon code setup failed.")
 		}
 	}()
 
-	couponcode.InitCache(cfg.Server.MaxCouponCodeCacheSize)
+	couponcode.InitCache(s.cfg.Server.MaxCouponCodeCacheSize)
 	log.Info().Msgf("connecting to database")
-	db, err := database.Connect(context.Background(), &cfg.Database)
+	var err error
+	s.db, err = database.Connect(ctx, &s.cfg.Database)
 	if err != nil {
-		log.Error().Msgf("failed to connect to database: %v", err)
+		log.Error().Err(err).Msg("failed to connect to database.")
 		return err
 	}
 
 	log.Info().Msgf("creating routes")
-	middleware.SetRateLimits(cfg.Server.ReqLimitPerIPPerSec, cfg.Server.ReqBurstPerIPPerSec)
+	middleware.SetRateLimits(s.cfg.Server.ReqLimitPerIPPerSec, s.cfg.Server.ReqBurstPerIPPerSec)
 	r := chi.NewRouter()
-	r.Use(middleware.Trace, middleware.Authentication, middleware.Logging, middleware.RateLimit)
+	r.Use(middleware.Trace, middleware.Logging, middleware.Authentication, middleware.RateLimit)
 	routes.AddHealthCheckRoutes(r)
-	routes.AddProductRoutes(r, db)
-	routes.AddOrderRoutes(r, db)
+	routes.AddProductRoutes(r, s.db)
+	routes.AddOrderRoutes(r, s.db)
 
-	serverAddr := fmt.Sprintf("%s:%d", cfg.Server.Host, cfg.Server.Port)
-	httpServer = &http.Server{
+	serverAddr := fmt.Sprintf("%s:%d", s.cfg.Server.Host, s.cfg.Server.Port)
+	s.httpServer = &http.Server{
 		Addr:    serverAddr,
 		Handler: r,
 	}
 
-	// Start server in a goroutine to make it stoppable
 	go func() {
-		if errSrv := httpServer.ListenAndServe(); errSrv != nil && !errors.Is(errSrv, http.ErrServerClosed) {
-			log.Error().Msgf("HTTP server failed: %v", errSrv)
+		if errSrv := s.httpServer.ListenAndServe(); errSrv != nil && !errors.Is(errSrv, http.ErrServerClosed) {
+			log.Error().Err(errSrv).Msgf("HTTP server failed.")
+			s.ErrChan <- errSrv
 		}
 	}()
 
@@ -69,18 +83,25 @@ func Start(cfg *config.Config) error {
 }
 
 // Stop gracefully shuts down the server with a context timeout.
-func Stop(ctx context.Context) error {
-	if httpServer == nil {
-		return nil
+func (s *Server) Stop(ctx context.Context) error {
+	if s.httpServer != nil {
+		log.Info().Msg("Shutting down server gracefully")
+		if err := s.httpServer.Shutdown(ctx); err != nil {
+			log.Error().Err(err).Msg("Server shutdown error.")
+		}
 	}
 
-	log.Info().Msg("Shutting down server gracefully")
-	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
-	if err := httpServer.Shutdown(shutdownCtx); err != nil {
-		log.Error().Msgf("Server shutdown error: %v", err)
-		return err
+	if s.db != nil {
+		db, err := s.db.DB()
+		if err == nil {
+			if err = db.Close(); err != nil {
+				log.Error().Err(err).Msg("error while closing sql.DB")
+			} else {
+				log.Info().Msg("DB closed successfully")
+			}
+		} else {
+			log.Error().Err(err).Msg("failed to retrieve sql.DB for closing")
+		}
 	}
 
 	log.Info().Msg("Server stopped successfully")
