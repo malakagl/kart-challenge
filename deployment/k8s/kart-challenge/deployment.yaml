@@ -13,19 +13,18 @@ spec:
       labels:
         app: kart-challenge
     spec:
+      initContainers:
+        - name: wait-for-postgres
+          image: busybox
+          command: ['sh', '-c', 'until nc -z postgres 5432; do echo waiting for postgres; sleep 2; done;']
       containers:
         - name: kart-challenge
-          imagePullPolicy: Never
-          image: kart-challenge:latest
-          env:
-            - name: ENVIRONMENT
-              value: "k8s"
+          image: kart-challenge
+          imagePullPolicy: IfNotPresent
           command:
             - "sh"
             - "-c"
-            - |
-              sleep 60 && \
-              ./kart-challenge --config /mnt/config/config.$ENVIRONMENT.yaml
+            - ./kart-challenge --config /mnt/config/config.k8s.yaml
           ports:
             - containerPort: 8080
           volumeMounts:
@@ -36,17 +35,28 @@ spec:
             - mountPath: /mnt/promocodes
               name: promo-codes-volume
           resources:
-            requests: # Minimum resources guaranteed
-              cpu: "500m"      # 0.5 vCPU
-              memory: "512Mi"  # 512MB RAM
-            limits: # Maximum resources allowed
-              cpu: "1"         # 1 vCPU
-              memory: "1Gi"    # 1GB RAM
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
       volumes:
         - name: config-volume
-          hostPath:
-            path: /mnt/config
-            type: Directory
+          configMap:
+            name: kart-config
         - name: db-migrations-volume
           hostPath:
             path: /mnt/db

@@ -53,16 +53,15 @@ go tool cover -func=coverage.out
 
 # deploy
 minikube start --memory 10240 --cpus 4
-docker build -f ./docker/Dockerfile -t kart-challenge:latest .
-minikube image load kart-challenge:latest
-
-# mount config and data
-minikube mount ./config:/mnt/config
+minikube addons enable ingress
 minikube mount ./promocodes:/mnt/promocodes
 minikube mount ./db:/mnt/db
-kubectl create configmap postgres-init \
-  --from-file=docker_postgres_init.sql=./scripts/docker_postgres_init.sql \
-  -n kart-challenge
+docker build -f ./docker/Dockerfile -t kart-challenge:latest .
+minikube image load kart-challenge:latest
+kubectl apply -k ./deployment/k8s/
+minikube tunnel
+
+# mount config and data
 kubectl apply -k ./deployment/k8s/
 
 # verify
@@ -73,9 +72,15 @@ kubectl get pods -n kart-challenge
 kubectl logs kart-challenge-5d8ccdfcdd-qh8cb -n kart-challenge -f
 kubectl exec -it -n kart-challenge kart-challenge-6d69f6b49-hn5fb -- /bin/sh
 
+# update
+kubectl rollout restart deployment/kart-challenge -n kart-challenge
+
 # clean up
 kubectl delete service kart-challenge -n kart-challenge
+kubectl delete service postgres -n kart-challenge
 kubectl delete deployment kart-challenge -n kart-challenge
+kubectl delete deployment postgres -n kart-challenge
+kubectl delete -n kart-challenge persistentvolumeclaim postgres-pvc
 minikube stop
 minikube delete --all
 ```

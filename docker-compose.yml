@@ -22,6 +22,7 @@ services:
       context: .
       dockerfile: ./docker/Dockerfile
     container_name: kart-challenge
+    image: kart-challenge:latest
     depends_on:
       - postgres
     ports:
