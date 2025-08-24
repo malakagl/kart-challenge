@@ -22,6 +22,8 @@ func Logging(next http.Handler) http.Handler {
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 
+		logger := log.WithCtx(r.Context())
+		logger.Info().Msgf("%s %s", r.Method, r.URL.Path)
 		next.ServeHTTP(rw, r)
 
 		duration := time.Since(start)
@@ -29,7 +31,7 @@ func Logging(next http.Handler) http.Handler {
 		if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
 			clientIP = ip
 		}
-		log.WithCtx(r.Context()).Info().Msgf("Request %s %s from %s -> %d processed in %s",
+		logger.Info().Msgf("Request %s %s from %s -> %d processed in %s",
 			r.Method, r.URL.Path, clientIP, rw.statusCode, duration)
 	})
 }

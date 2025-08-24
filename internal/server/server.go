@@ -11,6 +11,7 @@ import (
 	"github.com/malakagl/kart-challenge/internal/database"
 	"github.com/malakagl/kart-challenge/internal/middleware"
 	"github.com/malakagl/kart-challenge/internal/routes"
+	"github.com/malakagl/kart-challenge/internal/server/otel"
 	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
 	"gorm.io/gorm"
@@ -33,12 +34,14 @@ func NewServer(c *config.Config) *Server {
 // Start sets up the database, coupon codes, routes, and starts the HTTP server.
 // Returns the server instance for later shutdown.
 func (s *Server) Start() error {
+	ctx := context.Background()
+	shutdown := otel.InitTracer("kart-challenge")
+	defer shutdown(ctx)
 	if err := database.RunMigrations(&s.cfg.Database); err != nil {
 		log.Error().Err(err).Msgf("database migrations failed.")
 		return err
 	}
 
-	ctx := context.Background()
 	couponcode.SetCouponCodeFiles(s.cfg.CouponCode.FilePaths)
 	go func() {
 		log.Info().Msg("Started decompressing coupon code files in background")
