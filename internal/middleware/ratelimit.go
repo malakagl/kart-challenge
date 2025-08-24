@@ -22,6 +22,7 @@ var (
 	mu         sync.RWMutex
 	rateLimit  rate.Limit = 5
 	burstLimit            = 10
+	rateWindow            = time.Minute // default 1 minute
 )
 
 func cleanupVisitors() {
@@ -30,7 +31,7 @@ func cleanupVisitors() {
 
 		mu.Lock()
 		for ip, v := range visitors {
-			if time.Since(v.lastSeen) > 3*time.Minute {
+			if time.Since(v.lastSeen) > rateWindow {
 				delete(visitors, ip)
 			}
 		}
@@ -83,7 +84,8 @@ func init() {
 	go cleanupVisitors()
 }
 
-func SetRateLimits(r, b int) {
+func SetRateLimits(r, b int, rw time.Duration) {
 	rateLimit = rate.Limit(r)
 	burstLimit = b
+	rateWindow = rw
 }

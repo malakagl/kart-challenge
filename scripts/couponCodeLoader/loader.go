@@ -16,7 +16,8 @@ import (
 )
 
 var couponFiles = []string{
-	"couponbase3.gz",
+	"couponbase1.gz",
+	"couponbase2.gz",
 }
 
 func main() {
@@ -48,7 +49,7 @@ func LoadCouponCodes() {
 	defer pool.Close()
 
 	files := couponFiles
-	concurrency := 1 // number of concurrent files
+	concurrency := 2 // number of concurrent files
 	batchSize := 1000000
 
 	filePaths := make(chan string, len(files))

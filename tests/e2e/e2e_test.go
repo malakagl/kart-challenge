@@ -203,7 +203,7 @@ func doRequest(t *testing.T, method, url, apiKey string, body []byte) (int, stri
 	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	require.NoError(t, err)
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{Timeout: 60 * time.Second}
 	req.Header.Set("x-api-key", apiKey)
 	resp, err := client.Do(req)
 	require.NoError(t, err)

@@ -20,21 +20,26 @@ type ServerConfig struct {
 	Host                   string        `yaml:"host"`
 	Port                   int           `yaml:"port" validate:"required"`
 	MaxCouponCodeCacheSize int           `yaml:"maxCouponCodeCacheSize"`
-	ReqLimitPerIPPerSec    int           `yaml:"reqLimitPerIPPerSec" validate:"min=1"`
-	ReqBurstPerIPPerSec    int           `yaml:"reqBurstPerIPPerSec" validate:"min=1"`
+	ReqLimitPerIP          int           `yaml:"reqLimitPerIP" validate:"min=1"`
+	ReqBurstPerIP          int           `yaml:"reqBurstPerIP" validate:"min=1"`
+	ReqRateWindow          time.Duration `yaml:"reqRateWindow" validate:"min=1m"`
 	GracefulTimeout        time.Duration `yaml:"gracefulTimeout" validate:"required"`
 }
 
 type DatabaseConfig struct {
-	Host                 string `yaml:"host" validate:"required"`
-	Port                 int    `yaml:"port" validate:"required"`
-	Name                 string `yaml:"name" validate:"required"`
-	User                 string `yaml:"user" validate:"required"`
-	Password             string `yaml:"password" validate:"required"`
-	MigrationsFolderPath string `yaml:"migrationsFolderPath" validate:"required"`
-	SSLMode              string `yaml:"sslMode"`
-	Debug                bool   `yaml:"debug"`
-	Type                 string `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
+	Host                 string        `yaml:"host" validate:"required"`
+	Port                 int           `yaml:"port" validate:"required"`
+	Name                 string        `yaml:"name" validate:"required"`
+	User                 string        `yaml:"user" validate:"required"`
+	Password             string        `yaml:"password" validate:"required"`
+	MigrationsFolderPath string        `yaml:"migrationsFolderPath" validate:"required"`
+	SSLMode              string        `yaml:"sslMode"`
+	Debug                bool          `yaml:"debug"`
+	Type                 string        `yaml:"type" validate:"required"` // e.g., "postgres", "sqlite"
+	MaxOpenConnections   int           `yaml:"maxOpenConnections" validate:"min=1"`
+	MaxIdleConnections   int           `yaml:"maxIdleConnections" validate:"min=1"`
+	ConnMaxIdleTime      time.Duration `yaml:"connMaxIdleTime" validate:"min=1m"`
+	MaxConnMaxLifeTime   time.Duration `yaml:"maxConnMaxLifeTime" validate:"min=1m"`
 }
 
 type CouponCodeConfig struct {

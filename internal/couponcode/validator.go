@@ -78,8 +78,9 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 
 func ValidateCouponCode(ctx context.Context, code string) (bool, error) {
 	log.WithCtx(ctx).Debug().Msgf("validating coupon code %s", code)
+	isValid := false
 	defer func(start time.Time) {
-		log.WithCtx(ctx).Debug().Msgf("validated coupon code in %s", time.Since(start).String())
+		log.WithCtx(ctx).Debug().Msgf("validated coupon code in %s: %v", time.Since(start).String(), isValid)
 	}(time.Now())
 
 	if len(code) < 8 || len(code) > 10 {
@@ -89,6 +90,7 @@ func ValidateCouponCode(ctx context.Context, code string) (bool, error) {
 
 	if value, found := couponCodeCache.Get(code); found {
 		log.WithCtx(ctx).Debug().Msgf("found coupon code in cache %s", code)
+		isValid = value
 		return value, nil
 	}
 
@@ -108,7 +110,8 @@ func ValidateCouponCode(ctx context.Context, code string) (bool, error) {
 	close(errChan)
 	if count.Load() >= 2 {
 		couponCodeCache.Set(code, true)
-		return true, nil
+		isValid = true
+		return isValid, nil
 	}
 
 	var err error

@@ -11,8 +11,9 @@ server:
   host: "localhost"
   port: 8080
   maxCouponCodeCacheSize: 1000
-  reqLimitPerIPPerSec: 5
-  reqBurstPerIPPerSec: 10
+  reqLimitPerIP: 5
+  reqBurstPerIP: 10
+  reqRateWindow: 1m
   gracefulTimeout: 30s
 database:
   host: "dbhost"
@@ -24,6 +25,10 @@ database:
   debug: false
   type: "postgres"
   migrationsFolderPath: "db"
+  maxOpenConnections: 1  
+  maxIdleConnections: 1
+  connMaxIdleTime: 1m
+  maxConnMaxLifeTime: 1m
 logging:
   level: debug
   jsonFormat: true
