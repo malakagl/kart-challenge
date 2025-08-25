@@ -2,7 +2,9 @@ package hooks
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/malakagl/kart-challenge/pkg/constants"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -23,8 +25,8 @@ func (h TraceHook) Run(e *zerolog.Event, _ zerolog.Level, _ string) {
 			e.Str("traceId", spanCtx.TraceID().String())
 			e.Str("spanId", spanCtx.SpanID().String())
 
-			if spanCtx.IsRemote() {
-				e.Str("parentSpanId", spanCtx.TraceFlags().String())
+			if parentSpanID := h.ctx.Value(constants.ParentSpanId); parentSpanID != nil {
+				e.Str("parentSpanId", fmt.Sprintf("%v", parentSpanID))
 			}
 		}
 	}

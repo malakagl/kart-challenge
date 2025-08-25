@@ -26,6 +26,12 @@ logging:
   level: debug
   jsonFormat: false
 
+telemetry:
+  enabled: true
+  serviceName: kart-challenge
+  host: jaeger
+  port: 4318
+
 couponCode:
   unzipped: false
   filePaths:

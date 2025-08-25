@@ -16,6 +16,7 @@ import (
 	"github.com/malakagl/kart-challenge/pkg/cache"
 	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
+	"github.com/malakagl/kart-challenge/pkg/otel"
 )
 
 var (
@@ -36,6 +37,8 @@ func SetCouponCodeFiles(f []string) {
 
 func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *sync.WaitGroup, cancel context.CancelFunc, errCh chan error) {
 	defer wg.Done()
+	ctx, span := otel.Tracer(ctx, "worker:"+path+":"+code)
+	defer span.End()
 
 	f, err := os.Open(path)
 	if err != nil {
@@ -77,6 +80,8 @@ func worker(ctx context.Context, path, code string, count *atomic.Int32, wg *syn
 }
 
 func ValidateCouponCode(ctx context.Context, code string) (bool, error) {
+	ctx, span := otel.Tracer(ctx, "validateCouponCode")
+	defer span.End()
 	log.WithCtx(ctx).Debug().Msgf("validating coupon code %s", code)
 	isValid := false
 	defer func(start time.Time) {

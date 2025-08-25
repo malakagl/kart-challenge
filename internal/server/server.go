@@ -11,9 +11,9 @@ import (
 	"github.com/malakagl/kart-challenge/internal/database"
 	"github.com/malakagl/kart-challenge/internal/middleware"
 	"github.com/malakagl/kart-challenge/internal/routes"
-	"github.com/malakagl/kart-challenge/internal/server/otel"
 	"github.com/malakagl/kart-challenge/pkg/errors"
 	"github.com/malakagl/kart-challenge/pkg/log"
+	"github.com/malakagl/kart-challenge/pkg/otel"
 	"gorm.io/gorm"
 )
 
@@ -35,21 +35,29 @@ func NewServer(c *config.Config) *Server {
 // Returns the server instance for later shutdown.
 func (s *Server) Start() error {
 	ctx := context.Background()
-	shutdown := otel.InitTracer("kart-challenge")
-	defer shutdown(ctx)
-	if err := database.RunMigrations(&s.cfg.Database); err != nil {
+	if s.cfg.Telemetry.Enabled {
+		_, err := otel.InitTracer("kart-challenge", fmt.Sprintf("%s:%d", s.cfg.Telemetry.Host, s.cfg.Telemetry.Port))
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := database.RunMigrations(ctx, &s.cfg.Database); err != nil {
 		log.Error().Err(err).Msgf("database migrations failed.")
 		return err
 	}
 
 	couponcode.SetCouponCodeFiles(s.cfg.CouponCode.FilePaths)
-	go func() {
+	go func(ctx context.Context) {
+		ctx, span := otel.Tracer(ctx, "decompress-coupon-files")
+		defer span.End()
+
 		log.Info().Msg("Started decompressing coupon code files in background")
-		err := couponcode.SetupCouponCodeFiles(s.cfg.CouponCode.FilePaths)
-		if err != nil {
-			log.Error().Err(err).Msg("coupon code setup failed.")
+		if errD := couponcode.SetupCouponCodeFiles(ctx, s.cfg.CouponCode.FilePaths); errD != nil {
+			span.RecordError(errD)
+			log.Error().Err(errD).Msg("coupon code setup failed.")
 		}
-	}()
+	}(ctx)
 
 	couponcode.InitCache(s.cfg.Server.MaxCouponCodeCacheSize)
 	log.Info().Msgf("connecting to database")
@@ -81,7 +89,7 @@ func (s *Server) Start() error {
 		}
 	}()
 
-	log.Info().Msgf("Server started on %s", serverAddr)
+	log.Info().Msgf("Host started on %s", serverAddr)
 	return nil
 }
 
@@ -90,7 +98,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	if s.httpServer != nil {
 		log.Info().Msg("Shutting down server gracefully")
 		if err := s.httpServer.Shutdown(ctx); err != nil {
-			log.Error().Err(err).Msg("Server shutdown error.")
+			log.Error().Err(err).Msg("Host shutdown error.")
 		}
 	}
 
@@ -107,6 +115,6 @@ func (s *Server) Stop(ctx context.Context) error {
 		}
 	}
 
-	log.Info().Msg("Server stopped successfully")
+	log.Info().Msg("Host stopped successfully")
 	return nil
 }

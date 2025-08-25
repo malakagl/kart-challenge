@@ -36,6 +36,7 @@ lint:
 
 run-it:
 	docker compose down
+	ENVIRONMENT=test docker compose up -d jaeger
 	ENVIRONMENT=test docker compose up -d postgres
 	until docker exec postgres pg_isready -U user; do sleep 1; done
 	ENVIRONMENT=test docker compose up -d --build kart-challenge

@@ -9,10 +9,9 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Trace ensures every request has a trace ID and propagates context.
+// Trace middleware starts a span for every HTTP request and propagates context
 func Trace(next http.Handler) http.Handler {
-	tracer := otel.Tracer("kart-challenge")
-
+	tracer := otel.Tracer("") // use service global tracer
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Extract any existing trace context from incoming headers
 		ctx := otel.GetTextMapPropagator().Extract(r.Context(), propagation.HeaderCarrier(r.Header))
@@ -27,14 +26,14 @@ func Trace(next http.Handler) http.Handler {
 			attribute.String("http.method", r.Method),
 			attribute.String("http.url", r.URL.Path),
 			attribute.String("http.client_ip", r.RemoteAddr),
+			attribute.String("http.user_agent", r.UserAgent()),
 		)
 
-		// Propagate trace ID in response headers for clients
-		traceID := span.SpanContext().TraceID().String()
-		w.Header().Set("x-request-id", traceID)
-		w.Header().Set("traceparent", span.SpanContext().TraceID().String()) // optional for W3C compliance
+		// Inject updated trace context into response headers
+		otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(w.Header()))
+		w.Header().Set("x-request-id", span.SpanContext().TraceID().String())
 
-		// Pass the updated context to the next handler
+		// Pass context to next handler
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
