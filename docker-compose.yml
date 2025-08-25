@@ -58,10 +58,46 @@ services:
     networks:
       - kart-challenge-network
 
+  redis:
+    image: redis:7
+    container_name: redis
+    hostname: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - kart-challenge-network
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"     # limit container to 2 CPU cores
+          memory: 8g      # max 4GB memory
+        reservations:
+          cpus: "2.0"     # guarantee at least 1 CPU
+          memory: 4g      # guarantee 2GB RAM
+    command: [
+      "redis-server",
+      "--save", "60", "1000",       # snapshot every 60s if 1000 writes
+      "--appendonly", "yes",        # durable logging
+      "--maxmemory", "4gb",         # limit in-RAM usage
+      "--maxmemory-policy", "allkeys-lru" # eviction policy
+    ]
+  redisUi:
+    image: redis/redisinsight:latest
+    container_name: redisui
+    hostname: redisui
+    ports:
+      - "5540:5540"
+    networks:
+      - kart-challenge-network
+
 networks:
     kart-challenge-network:
         driver: bridge
 
 volumes:
   postgres_data:
+    driver: local
+  redis_data:
     driver: local
