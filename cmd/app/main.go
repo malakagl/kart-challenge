@@ -23,7 +23,7 @@ func main() {
 	}
 
 	log.Init("kart-challenge", cfg.Logging)
-	log.Info().Msgf("Server setting up on port: %d", cfg.Server.Port)
+	log.Info().Msgf("Host setting up on port: %d", cfg.Server.Port)
 
 	s := server.NewServer(cfg)
 	if err := s.Start(); err != nil {
@@ -50,5 +50,5 @@ func main() {
 		log.Fatal().Err(err).Msg("server shutdown failed")
 	}
 
-	log.Info().Msg("Server exited gracefully")
+	log.Info().Msg("Host exited gracefully")
 }

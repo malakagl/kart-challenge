@@ -14,6 +14,14 @@ type Config struct {
 	Database   DatabaseConfig   `yaml:"database"`
 	Logging    LoggingConfig    `yaml:"logging"`
 	CouponCode CouponCodeConfig `yaml:"couponCode"`
+	Telemetry  TelemetryConfig  `yaml:"telemetry"`
+}
+
+type TelemetryConfig struct {
+	Enabled     bool   `yaml:"enabled"`
+	ServiceName string `yaml:"serviceName"`
+	Host        string `yaml:"host"`
+	Port        int    `yaml:"port"`
 }
 
 type ServerConfig struct {
